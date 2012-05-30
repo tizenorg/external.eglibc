@@ -18,6 +18,7 @@ Source1: manual.tar
 Source10: glibc_post_upgrade.c
 Source11: build-locale-archive.c
 Source12: tzdata-update.c
+Source1001: packaging/eglibc.manifest 
 
 Patch1: slp-limit-hack.patch
 Patch2: eglibc-2.13-debian.patch.gz
@@ -177,6 +178,7 @@ touch `find . -name configure`
 touch locale/programs/*-kw.h
 
 %build
+cp %{SOURCE1001} .
 GCC=gcc
 GXX=g++
 # Fail to build with system flags.syslog.o: inline failed.
@@ -563,6 +565,7 @@ rm -rf "$RPM_BUILD_ROOT"
 rm -f *.filelist*
 
 %files -f rpm.filelist
+%manifest eglibc.manifest
 %defattr(-,root,root)
 %verify(not md5 size mtime) %config(noreplace) /etc/localtime
 %verify(not md5 size mtime) %config(noreplace) /etc/ld.so.conf
@@ -579,6 +582,7 @@ rm -f *.filelist*
 
 %ifnarch %{auxarches}
 %files -f common.filelist common
+%manifest eglibc.manifest
 %defattr(-,root,root)
 %dir %{_prefix}/lib/locale
 %attr(0644,root,root) %verify(not md5 size mtime mode) %ghost %config(missingok,noreplace) %{_prefix}/lib/locale/locale-archive
@@ -587,18 +591,23 @@ rm -f *.filelist*
 %doc documentation/*
 
 %files -f devel.filelist devel
+%manifest eglibc.manifest
 %defattr(-,root,root)
 
 %files -f static.filelist static
+%manifest eglibc.manifest
 %defattr(-,root,root)
 
 %files -f headers.filelist headers
+%manifest eglibc.manifest
 %defattr(-,root,root)
 
 %files -f utils.filelist utils
+%manifest eglibc.manifest
 %defattr(-,root,root)
 
 %files -f nscd.filelist -n nscd
+%manifest eglibc.manifest
 %defattr(-,root,root)
 %config(noreplace) /etc/nscd.conf
 %config /etc/rc.d/init.d/nscd
