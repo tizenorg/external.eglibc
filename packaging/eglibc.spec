@@ -18,6 +18,7 @@ Source1: manual.tar
 Source10: glibc_post_upgrade.c
 Source11: build-locale-archive.c
 Source12: tzdata-update.c
+Source13: generate-supported.mk
 Source1001: packaging/eglibc.manifest 
 
 Patch1: slp-limit-hack.patch
@@ -251,10 +252,20 @@ GCC=`cat Gcc`
 rm -rf $RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT
 make -j1 install_root=$RPM_BUILD_ROOT install -C build-%{nptl_target_cpu}-linuxnptl PARALLELMFLAGS=-s
+
+mkdir -p %{buildroot}/usr/lib/locale
 %ifnarch %{auxarches}
 cd build-%{nptl_target_cpu}-linuxnptl && \
-  make %{?_smp_mflags} install_root=$RPM_BUILD_ROOT install-locales -C ../localedata objdir=`pwd` && \
+  #make %{?_smp_mflags} install_root=$RPM_BUILD_ROOT install-locales -C ../localedata objdir=`pwd` && \
+  REGEX="(de_DE|el_GR|en_GB|en_US|es_ES|fr_FR|it_IT|ja_JP|ko_KR|nl_NL|pt_BR|pt_PT|ru_RU|tr_TR|zh_CN|zh_HK|zh_TW).*UTF-8"
+  I18NPATH=../localedata GCONV_PATH=../iconvdata localedef --quiet -c -f UTF-8 -i C %{buildroot}/usr/lib/locale/C.UTF-8
+  for loc in  `grep -E $REGEX ../localedata/SUPPORTED | cut -d"." -f1`; do
+    I18NPATH=../localedata GCONV_PATH=../iconvdata localedef --quiet -c -f UTF-8 -i $loc  %{buildroot}/usr/lib/locale/$loc.UTF-8
+  done
   cd ..
+
+  make -f %{SOURCE13} IN=localedata/SUPPORTED \
+                OUT=%{buildroot}/usr/share/i18n/SUPPORTED;
 %endif
 
 librtso=`basename $RPM_BUILD_ROOT/%{_lib}/librt.so.*`

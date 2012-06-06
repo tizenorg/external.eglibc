@@ -1,2 +1,5 @@
+* Wed Jun 6 2012 Junfeng Dong <junfeng.dong@intel.com> - 2.13
+- Anas' changes: Only install UTF locales of supported languages.
+
 * Tue Jul 26 2011 Junfeng Dong <junfeng.dong@intel.com> - 2.13
 - Import.
