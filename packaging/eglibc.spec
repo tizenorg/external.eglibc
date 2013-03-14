@@ -18,7 +18,7 @@ Source1: manual.tar
 Source10: glibc_post_upgrade.c
 Source11: build-locale-archive.c
 Source12: tzdata-update.c
-#Source13: generate-supported.mk
+Source13: generate-supported.mk
 
 Patch1: slp-limit-hack.patch
 Patch2: eglibc-2.13-debian.patch.gz
@@ -128,8 +128,9 @@ use the standard C libraries.
 Summary: Common binaries and locale data for glibc
 Requires: %{name} = %{version}-%{release}
 Requires: tzdata >= 2003a
-#Requires(post): grep
-#Requires(post): findutils
+Requires(post): grep
+Requires(post): findutils
+Requires(post): coreutils
 Group: System/Base
 Provides: glibc-common
 
@@ -256,26 +257,26 @@ make -j1 install_root=$RPM_BUILD_ROOT install -C build-%{nptl_target_cpu}-linuxn
 %ifnarch %{auxarches}
 mkdir -p %{buildroot}/usr/lib/locale
 cd build-%{nptl_target_cpu}-linuxnptl && \
-  make %{?_smp_mflags} install_root=$RPM_BUILD_ROOT install-locales -C ../localedata objdir=`pwd` && \
-#  I18NPATH=../localedata GCONV_PATH=../iconvdata localedef --quiet -c -f UTF-8 -i C %{buildroot}/usr/lib/locale/C.UTF-8
-#  I18NPATH=../localedata GCONV_PATH=../iconvdata localedef --quiet -c -f UTF-8 -i tr_TR %{buildroot}/usr/lib/locale/tr_TR.UTF-8
-#  I18NPATH=../localedata GCONV_PATH=../iconvdata localedef --quiet -c -f UTF-8 -i et_EE %{buildroot}/usr/lib/locale/et_EE.UTF-8
-#  I18NPATH=../localedata GCONV_PATH=../iconvdata localedef --quiet -c -f UTF-8 -i lt_LT %{buildroot}/usr/lib/locale/lt_LT.UTF-8
-#  I18NPATH=../localedata GCONV_PATH=../iconvdata localedef --quiet -c -f UTF-8 -i uz_UZ %{buildroot}/usr/lib/locale/uz_UZ.UTF-8
-#  I18NPATH=../localedata GCONV_PATH=../iconvdata localedef --quiet -c -f UTF-8 -i hy_AM %{buildroot}/usr/lib/locale/hy_AM
-#  I18NPATH=../localedata GCONV_PATH=../iconvdata localedef --quiet -c -f UTF-8 -i vi_VN %{buildroot}/usr/lib/locale/vi_VN
-#  REGEX="(ar_AE|az_AZ|bg_BG|ca_ES|cs_CZ|da_DK|de_DE|el_GR|en_GB|en_PH|en_US|es_ES|es_US|eu_ES|fi_FI|fr_CA|fr_FR|ga_IE|gl_ES|he_IL|hr_HR|hu_HU|id_ID|is_IS|it_IT|ja_JP|ka_GE|kk_KZ|ko_KR|lv_LV|mk_MK|ms_MY|nb_NO|nl_NL|pl_PL|pt_BR|pt_PT|ro_RO|ru_RU|sk_SK|sl_SI|sv_SE|th_TH|uk_UA|zh_CN|zh_HK|zh_SG|zh_TW).*UTF-8"
-#  for loc in  `grep -E $REGEX ../localedata/SUPPORTED | cut -d"." -f1`; do
-#    I18NPATH=../localedata GCONV_PATH=../iconvdata localedef --quiet -c -f UTF-8 -i $loc  %{buildroot}/usr/lib/locale/$loc.UTF-8
-#  done
-#  REGEX1="(fa_IR|hi_IN|sr_RS|ur_PK)"
-#  for loc1 in  `grep -E $REGEX1 ../localedata/SUPPORTED | cut -d"/" -f1`; do
-#    I18NPATH=../localedata GCONV_PATH=../iconvdata localedef --quiet -c -f UTF-8 -i $loc1  %{buildroot}/usr/lib/locale/$loc1
-#  done
+#  make %{?_smp_mflags} install_root=$RPM_BUILD_ROOT install-locales -C ../localedata objdir=`pwd` && \
+  I18NPATH=../localedata GCONV_PATH=../iconvdata localedef --quiet -c -f UTF-8 -i C %{buildroot}/usr/lib/locale/C.UTF-8
+  I18NPATH=../localedata GCONV_PATH=../iconvdata localedef --quiet -c -f UTF-8 -i tr_TR %{buildroot}/usr/lib/locale/tr_TR.UTF-8
+  I18NPATH=../localedata GCONV_PATH=../iconvdata localedef --quiet -c -f UTF-8 -i et_EE %{buildroot}/usr/lib/locale/et_EE.UTF-8
+  I18NPATH=../localedata GCONV_PATH=../iconvdata localedef --quiet -c -f UTF-8 -i lt_LT %{buildroot}/usr/lib/locale/lt_LT.UTF-8
+  I18NPATH=../localedata GCONV_PATH=../iconvdata localedef --quiet -c -f UTF-8 -i uz_UZ %{buildroot}/usr/lib/locale/uz_UZ.UTF-8
+  I18NPATH=../localedata GCONV_PATH=../iconvdata localedef --quiet -c -f UTF-8 -i hy_AM %{buildroot}/usr/lib/locale/hy_AM
+  I18NPATH=../localedata GCONV_PATH=../iconvdata localedef --quiet -c -f UTF-8 -i vi_VN %{buildroot}/usr/lib/locale/vi_VN
+  REGEX="(ar_AE|az_AZ|bg_BG|ca_ES|cs_CZ|da_DK|de_DE|el_GR|en_GB|en_PH|en_US|es_ES|es_MX|eu_ES|fi_FI|fr_CA|fr_FR|ga_IE|gl_ES|he_IL|hr_HR|hu_HU|id_ID|is_IS|it_IT|ja_JP|ka_GE|kk_KZ|ko_KR|lv_LV|mk_MK|ms_MY|nb_NO|nl_NL|pl_PL|pt_BR|pt_PT|ro_RO|ru_RU|sk_SK|sl_SI|sv_SE|th_TH|uk_UA|zh_CN|zh_HK|zh_SG|zh_TW).*UTF-8"
+  for loc in  `grep -E $REGEX ../localedata/SUPPORTED | cut -d"." -f1`; do
+    I18NPATH=../localedata GCONV_PATH=../iconvdata localedef --quiet -c -f UTF-8 -i $loc  %{buildroot}/usr/lib/locale/$loc.UTF-8
+  done
+  REGEX1="(fa_IR|hi_IN|sr_RS|ur_PK)"
+  for loc1 in  `grep -E $REGEX1 ../localedata/SUPPORTED | cut -d"/" -f1`; do
+    I18NPATH=../localedata GCONV_PATH=../iconvdata localedef --quiet -c -f UTF-8 -i $loc1  %{buildroot}/usr/lib/locale/$loc1
+  done
   cd ..
 
-#  make -f %{SOURCE13} IN=localedata/SUPPORTED \
-#                OUT=%{buildroot}/usr/share/i18n/SUPPORTED;
+  make -f %{SOURCE13} IN=localedata/SUPPORTED \
+                OUT=%{buildroot}/usr/share/i18n/SUPPORTED;
 %endif
 
 librtso=`basename $RPM_BUILD_ROOT/%{_lib}/librt.so.*`
@@ -543,9 +544,10 @@ mkdir -p $RPM_BUILD_ROOT/var/cache/ldconfig
 
 %postun -p /sbin/ldconfig
 
-%post common -p /usr/sbin/build-locale-archive
-#/bin/ls /usr/lib/locale/ | /bin/grep _ | /usr/bin/xargs -I {} /bin/rm -rf /usr/lib/locale/{}
-#rm -rf /usr/lib/locale/C.UTF-8
+%post common
+/usr/sbin/build-locale-archive
+/bin/ls /usr/lib/locale/ | /bin/grep _ | /usr/bin/xargs -I {} /bin/rm -rf /usr/lib/locale/{}
+rm -rf /usr/lib/locale/C.UTF-8
 
 %triggerin common -p /usr/sbin/tzdata-update -- tzdata
 
