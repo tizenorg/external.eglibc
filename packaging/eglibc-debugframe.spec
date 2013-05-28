@@ -7,7 +7,7 @@ Version:	2.13
 Release:	1
 License:	LGPLv2+ and LGPLv2+ with exceptions and GPLv2+
 Group:		Development/Libraries
-Source0:	%{name}-${version}.tar.gz
+Source0:	%{name}-%{version}.tar.gz
 BuildRequires:	eglibc-debuginfo = %{version}
 BuildRequires:	binutils
 
