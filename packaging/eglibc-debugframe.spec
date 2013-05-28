@@ -16,7 +16,7 @@ The package contains the libc debug library with .debug_frame section only
 which can be helpful during signal frame backtrace.
 
 %prep
-%setup -q 
+%setup -q -n eglibc 
 
 %install
 mkdir -p %{buildroot}/%{_prefix}/%{_lib}/debug/%{_lib}
