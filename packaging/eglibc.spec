@@ -23,6 +23,7 @@ Source13: generate-supported.mk
 Patch1: slp-limit-hack.patch
 Patch2: eglibc-2.13-debian.patch.gz
 Patch3: glibc-arm-atomics-disable-qemu.patch
+Patch4: clang_va_arg_pack.patch
 
 Provides: ldconfig
 # The dynamic linker supports DT_GNU_HASH
@@ -167,6 +168,7 @@ If unsure if you need this, don't install this package.
 %patch1 -p1 
 %patch2 -p1 
 %patch3 -p1
+%patch4 -p1
 # Hack here.
 rm -rf manual
 tar xf %SOURCE1
