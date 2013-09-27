@@ -542,6 +542,12 @@ touch $RPM_BUILD_ROOT/var/run/nscd/{socket,nscd.pid}
 mkdir -p $RPM_BUILD_ROOT/var/cache/ldconfig
 > $RPM_BUILD_ROOT/var/cache/ldconfig/aux-cache
 
+mkdir -p %{buildroot}/usr/share/license
+cp COPYING %{buildroot}/usr/share/license/%{name}
+cat COPYING.LIB >> %{buildroot}/usr/share/license/%{name}
+cat README.libm >> %{buildroot}/usr/share/license/%{name}
+cat LICENSES >> %{buildroot}/usr/share/license/%{name}
+
 %post -p /usr/sbin/glibc_post_upgrade.%{_target_cpu}
 
 %postun -p /sbin/ldconfig
@@ -605,6 +611,7 @@ rm -f *.filelist*
 %doc COPYING COPYING.LIB README.libm LICENSES
 %doc hesiod/README.hesiod
 %manifest eglibc.manifest
+/usr/share/license/%{name}
 
 %ifnarch %{auxarches}
 %files -f common.filelist common
