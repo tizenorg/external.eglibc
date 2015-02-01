@@ -160,6 +160,7 @@ which can be helpful during program debugging.
 
 If unsure if you need this, don't install this package.
 
+
 %prep
 %setup -q
 %patch1 -p1
@@ -210,6 +211,9 @@ rm -rf $builddir
 mkdir $builddir ; cd $builddir
 ../configure CC="$GCC" CXX="$GXX" CFLAGS="$BuildFlags" \
 	--prefix=%{_prefix} \
+	--bindir=%{_bindir} \
+	--libdir=%{_libdir} \
+	--libexecdir=%{_libexecdir} \
 	--enable-add-ons=nptl$AddOns --without-cvs $EnableKernel \
 	--with-headers=%{_prefix}/include \
 	--with-tls --with-__thread  \
@@ -260,7 +264,7 @@ cp COPYING %{buildroot}/usr/share/license/%{name}-headers
 cp COPYING %{buildroot}/usr/share/license/%{name}-utils
 cp COPYING %{buildroot}/usr/share/license/nscd
 
-make -j1 install_root=$RPM_BUILD_ROOT install -C build-%{nptl_target_cpu}-linuxnptl PARALLELMFLAGS=-s
+make install_root=$RPM_BUILD_ROOT install -C build-%{nptl_target_cpu}-linuxnptl PARALLELMFLAGS=-s
 #%ifnarch %{auxarches}
 %if localepackage
 mkdir -p %{buildroot}/usr/lib/locale
@@ -296,7 +300,7 @@ mkdir -p $RPM_BUILD_ROOT/etc/default
 
 # Take care of setuids
 # -- new security review sez that this shouldn't be needed anymore
-#chmod 755 $RPM_BUILD_ROOT%{_prefix}/libexec/pt_chown
+#chmod 755 $RPM_BUILD_ROOT%{_prefix}/%{_libexecdir}/pt_chown
 
 # This is for ncsd - in glibc 2.2
 install -m 644 nscd/nscd.conf $RPM_BUILD_ROOT/etc
@@ -416,16 +420,16 @@ grep '%{_prefix}/bin' < rpm.filelist >> common.filelist
 %if localepackage
 grep '%{_prefix}/lib/locale' < rpm.filelist | grep -v /locale-archive.tmpl >> common.filelist
 %endif
-mkdir -p $RPM_BUILD_ROOT/%{_prefix}/libexec/
-mv -f build-%{nptl_target_cpu}-linuxnptl/login/pt_chown $RPM_BUILD_ROOT/%{_prefix}/libexec/ 
-echo '%{_prefix}/libexec/pt_chown' >> rpm.filelist
-grep '%{_prefix}/libexec/pt_chown' < rpm.filelist >> common.filelist
+mkdir -p $RPM_BUILD_ROOT/%{_libexecdir}/
+mv -f build-%{nptl_target_cpu}-linuxnptl/login/pt_chown $RPM_BUILD_ROOT/%{_libexecdir}/ 
+echo '%{_libexecdir}/pt_chown' >> rpm.filelist
+grep '%{_libexecdir}/pt_chown' < rpm.filelist >> common.filelist
 grep '%{_prefix}/sbin/[^gi]' < rpm.filelist >> common.filelist
 grep '%{_prefix}/share' < rpm.filelist | grep -v '%{_prefix}/share/zoneinfo' >> common.filelist
 
 sed -i -e '\|%{_prefix}/bin|d' \
        -e '\|%{_prefix}/lib/locale|d' \
-       -e '\|%{_prefix}/libexec/pt_chown|d' \
+       -e '\|%{_libexecdir}/pt_chown|d' \
        -e '\|%{_prefix}/sbin/[^gi]|d' \
        -e '\|%{_prefix}/share|d' rpm.filelist > nosegneg.filelist
 
@@ -593,7 +597,7 @@ rm -f *.filelist*
 %verify(not md5 size mtime) %config(noreplace) /etc/localtime
 %verify(not md5 size mtime) %config(noreplace) /etc/ld.so.conf
 %dir /etc/ld.so.conf.d
-%dir %{_prefix}/libexec/getconf
+%dir %{_libexecdir}/getconf
 %dir %{_prefix}/%{_lib}/gconv
 %dir %attr(0700,root,root) /var/cache/ldconfig
 %attr(0600,root,root) %verify(not md5 size mtime) %ghost %config(missingok,noreplace) /var/cache/ldconfig/aux-cache
@@ -611,7 +615,7 @@ rm -f *.filelist*
 %dir %{_prefix}/lib/locale
 %attr(0644,root,root) %verify(not md5 size mtime mode) %ghost %config(missingok,noreplace) %{_prefix}/lib/locale/locale-archive
 %dir %attr(755,root,root) /etc/default
-%attr(4711,root,root) %{_prefix}/libexec/pt_chown
+%attr(4711,root,root) %{_libexecdir}/pt_chown
 %doc documentation/*
 /usr/share/license/%{name}-common
 %manifest eglibc-common.manifest
