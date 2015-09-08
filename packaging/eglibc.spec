@@ -1,5 +1,6 @@
 %define multiarcharches %{ix86} x86_64
 %define run_glibc_tests 0
+%define localepackage 0
 
 Summary:a variant of the GNU C Library targetting embedded systems.
 Name: 	eglibc
@@ -13,15 +14,17 @@ Release:1
 License:LGPLv2+ and LGPLv2+ with exceptions and GPLv2+
 Group: 	System/Libraries
 URL: 	http://www.eglibc.org
-Source0: eglibc-2.13.tar.gz
+Source0: eglibc-2.13.tar.bz2
 Source1: manual.tar
 Source10: glibc_post_upgrade.c
 Source11: build-locale-archive.c
 Source12: tzdata-update.c
+Source13: generate-supported.mk
 
 Patch1: slp-limit-hack.patch
 Patch2: eglibc-2.13-debian.patch.gz
 Patch3: glibc-arm-atomics-disable-qemu.patch
+Patch4:	use_fullpath.patch
 
 Provides: ldconfig
 # The dynamic linker supports DT_GNU_HASH
@@ -107,10 +110,7 @@ Obsoletes: glibc-headers(i686)
 Obsoletes: %{name}-headers(i586)
 Obsoletes: %{name}-headers(i686)
 %endif
-#Requires(pre): linux-headers
-#Requires: linux-headers >= 2.2.1, %{name} = %{version}-%{release}
 Requires: %{name} = %{version}-%{release}
-#BuildRequires: linux-headers >= 2.6.22
 
 %description headers
 The glibc-headers package contains the header files necessary
@@ -127,6 +127,9 @@ use the standard C libraries.
 Summary: Common binaries and locale data for glibc
 Requires: %{name} = %{version}-%{release}
 Requires: tzdata >= 2003a
+Requires: grep
+Requires: findutils
+Requires: coreutils
 Group: System/Base
 Provides: glibc-common
 
@@ -159,10 +162,11 @@ If unsure if you need this, don't install this package.
 
 
 %prep
-%setup -q 
-%patch1 -p1 
-%patch2 -p1 
+%setup -q
+%patch1 -p1
+%patch2 -p1
 %patch3 -p1
+%patch4 -p1
 # Hack here.
 rm -rf manual
 tar xf %SOURCE1
@@ -207,6 +211,9 @@ rm -rf $builddir
 mkdir $builddir ; cd $builddir
 ../configure CC="$GCC" CXX="$GXX" CFLAGS="$BuildFlags" \
 	--prefix=%{_prefix} \
+	--bindir=%{_bindir} \
+	--libdir=%{_libdir} \
+	--libexecdir=%{_libexecdir} \
 	--enable-add-ons=nptl$AddOns --without-cvs $EnableKernel \
 	--with-headers=%{_prefix}/include \
 	--with-tls --with-__thread  \
@@ -248,12 +255,32 @@ GCC=`cat Gcc`
 
 rm -rf $RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT
-make -j1 install_root=$RPM_BUILD_ROOT install -C build-%{nptl_target_cpu}-linuxnptl PARALLELMFLAGS=-s
-%ifnarch %{auxarches}
+
+mkdir -p %{buildroot}/usr/share/license
+cp COPYING %{buildroot}/usr/share/license/%{name}
+cp COPYING %{buildroot}/usr/share/license/%{name}-common
+cp COPYING %{buildroot}/usr/share/license/%{name}-static
+cp COPYING %{buildroot}/usr/share/license/%{name}-headers
+cp COPYING %{buildroot}/usr/share/license/%{name}-utils
+cp COPYING %{buildroot}/usr/share/license/nscd
+
+make install_root=$RPM_BUILD_ROOT install -C build-%{nptl_target_cpu}-linuxnptl PARALLELMFLAGS=-s
+#%ifnarch %{auxarches}
+%if localepackage
+mkdir -p %{buildroot}/usr/lib/locale
 cd build-%{nptl_target_cpu}-linuxnptl && \
-  make %{?_smp_mflags} install_root=$RPM_BUILD_ROOT install-locales -C ../localedata objdir=`pwd` && \
+#  make %{?_smp_mflags} install_root=$RPM_BUILD_ROOT install-locales -C ../localedata objdir=`pwd` && \
+  I18NPATH=../localedata GCONV_PATH=../iconvdata localedef --quiet -c -f UTF-8 -i C %{buildroot}/usr/lib/locale/C.UTF-8
   cd ..
+
+  make -f %{SOURCE13} IN=localedata/SUPPORTED \
+                OUT=%{buildroot}/usr/share/i18n/SUPPORTED;
 %endif
+
+# remove /usr/share/i18n unnecessary on the target device
+if [ -d %{buildroot}/usr/share/i18n/ ]; then
+  rm -rf %{buildroot}/usr/share/i18n/
+fi
 
 librtso=`basename $RPM_BUILD_ROOT/%{_lib}/librt.so.*`
 
@@ -267,15 +294,13 @@ rm -f $RPM_BUILD_ROOT/%{_lib}/libNoVersion*
 cp -a bits/stdio-lock.h $RPM_BUILD_ROOT%{_prefix}/include/bits/stdio-lock.h
 # And <bits/libc-lock.h> needs sanitizing as well.
 
-
-
 ln -sf libbsd-compat.a $RPM_BUILD_ROOT%{_prefix}/%{_lib}/libbsd.a
 
 mkdir -p $RPM_BUILD_ROOT/etc/default
 
 # Take care of setuids
 # -- new security review sez that this shouldn't be needed anymore
-#chmod 755 $RPM_BUILD_ROOT%{_prefix}/libexec/pt_chown
+#chmod 755 $RPM_BUILD_ROOT%{_prefix}/%{_libexecdir}/pt_chown
 
 # This is for ncsd - in glibc 2.2
 install -m 644 nscd/nscd.conf $RPM_BUILD_ROOT/etc
@@ -392,17 +417,19 @@ sed -i -e '\|%{_prefix}/%{_lib}/lib.*\.a|d' \
        -e '\|nscd|d' rpm.filelist
 
 grep '%{_prefix}/bin' < rpm.filelist >> common.filelist
+%if localepackage
 grep '%{_prefix}/lib/locale' < rpm.filelist | grep -v /locale-archive.tmpl >> common.filelist
-mkdir -p $RPM_BUILD_ROOT/%{_prefix}/libexec/
-mv -f build-%{nptl_target_cpu}-linuxnptl/login/pt_chown $RPM_BUILD_ROOT/%{_prefix}/libexec/ 
-echo '%{_prefix}/libexec/pt_chown' >> rpm.filelist
-grep '%{_prefix}/libexec/pt_chown' < rpm.filelist >> common.filelist
+%endif
+mkdir -p $RPM_BUILD_ROOT/%{_libexecdir}/
+mv -f build-%{nptl_target_cpu}-linuxnptl/login/pt_chown $RPM_BUILD_ROOT/%{_libexecdir}/ 
+echo '%{_libexecdir}/pt_chown' >> rpm.filelist
+grep '%{_libexecdir}/pt_chown' < rpm.filelist >> common.filelist
 grep '%{_prefix}/sbin/[^gi]' < rpm.filelist >> common.filelist
 grep '%{_prefix}/share' < rpm.filelist | grep -v '%{_prefix}/share/zoneinfo' >> common.filelist
 
 sed -i -e '\|%{_prefix}/bin|d' \
        -e '\|%{_prefix}/lib/locale|d' \
-       -e '\|%{_prefix}/libexec/pt_chown|d' \
+       -e '\|%{_libexecdir}/pt_chown|d' \
        -e '\|%{_prefix}/sbin/[^gi]|d' \
        -e '\|%{_prefix}/share|d' rpm.filelist > nosegneg.filelist
 
@@ -485,7 +512,7 @@ rm libpthread.a
 ar rcs libpthread.a libpthread.o
 rm libpthread.o
 # Delete the static libraries for profile.
-ls *_p.a |xargs rm -f 
+ls *_p.a |xargs rm -f
 # Delete the static libraries for debug.
 ls ./debug/usr/lib/*.a |xargs rm -f
 popd
@@ -515,6 +542,9 @@ touch $RPM_BUILD_ROOT/var/run/nscd/{socket,nscd.pid}
 
 mkdir -p $RPM_BUILD_ROOT/var/cache/ldconfig
 > $RPM_BUILD_ROOT/var/cache/ldconfig/aux-cache
+
+mkdir -p $RPM_BUILD_ROOT/etc
+cp -f nss/fixed-nsswitch.conf $RPM_BUILD_ROOT/etc/nsswitch.conf
 
 %post -p /usr/sbin/glibc_post_upgrade.%{_target_cpu}
 
@@ -567,7 +597,7 @@ rm -f *.filelist*
 %verify(not md5 size mtime) %config(noreplace) /etc/localtime
 %verify(not md5 size mtime) %config(noreplace) /etc/ld.so.conf
 %dir /etc/ld.so.conf.d
-%dir %{_prefix}/libexec/getconf
+%dir %{_libexecdir}/getconf
 %dir %{_prefix}/%{_lib}/gconv
 %dir %attr(0700,root,root) /var/cache/ldconfig
 %attr(0600,root,root) %verify(not md5 size mtime) %ghost %config(missingok,noreplace) /var/cache/ldconfig/aux-cache
@@ -575,7 +605,9 @@ rm -f *.filelist*
 %doc README NEWS INSTALL FAQ BUGS NOTES PROJECTS CONFORMANCE
 %doc COPYING COPYING.LIB README.libm LICENSES
 %doc hesiod/README.hesiod
-
+/usr/share/license/%{name}
+%manifest eglibc.manifest
+%attr(0644,root,-) /etc/nsswitch.conf
 
 %ifnarch %{auxarches}
 %files -f common.filelist common
@@ -583,22 +615,29 @@ rm -f *.filelist*
 %dir %{_prefix}/lib/locale
 %attr(0644,root,root) %verify(not md5 size mtime mode) %ghost %config(missingok,noreplace) %{_prefix}/lib/locale/locale-archive
 %dir %attr(755,root,root) /etc/default
-%attr(4711,root,root) %{_prefix}/libexec/pt_chown
+%attr(4711,root,root) %{_libexecdir}/pt_chown
 %doc documentation/*
+/usr/share/license/%{name}-common
+%manifest eglibc-common.manifest
 
 %files -f devel.filelist devel
 %defattr(-,root,root)
 
 %files -f static.filelist static
 %defattr(-,root,root)
+/usr/share/license/%{name}-static
 
 %files -f headers.filelist headers
 %defattr(-,root,root)
+/usr/share/license/%{name}-headers
 
 %files -f utils.filelist utils
 %defattr(-,root,root)
+/usr/share/license/%{name}-utils
 
 %files -f nscd.filelist -n nscd
+/usr/share/license/nscd
+%manifest nscd.manifest
 %defattr(-,root,root)
 %config(noreplace) /etc/nscd.conf
 %config /etc/rc.d/init.d/nscd

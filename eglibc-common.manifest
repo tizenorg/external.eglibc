@@ -1,0 +1,22 @@
+<manifest>
+	<request>
+		<domain name="_"/>
+	</request>
+	<assign>
+		<filesystem path="/usr/bin/catchsegv" label="_" exec_label="none" />
+		<filesystem path="/usr/bin/gencat" label="_" exec_label="none" />
+		<filesystem path="/usr/bin/getconf" label="_" exec_label="none" />
+		<filesystem path="/usr/bin/getent" label="_" exec_label="none" />
+		<filesystem path="/usr/bin/iconv" label="_" exec_label="none" />
+		<filesystem path="/usr/bin/ldd" label="_" exec_label="none" />
+		<filesystem path="/usr/bin/locale" label="_" exec_label="none" />
+		<filesystem path="/usr/bin/localedef" label="_" exec_label="none" />
+		<filesystem path="/usr/bin/rpcgen" label="_" exec_label="none" />
+		<filesystem path="/usr/bin/sprof" label="_" exec_label="none" />
+		<filesystem path="/usr/bin/tzselect" label="_" exec_label="none" />
+		<filesystem path="/usr/sbin/build-locale-archive" label="_" exec_label="none" />
+		<filesystem path="/usr/sbin/tzdata-update" label="_" exec_label="none" />
+		<filesystem path="/usr/sbin/zdump" label="_" exec_label="none" />
+		<filesystem path="/usr/sbin/zic" label="_" exec_label="none" />
+	</assign>
+</manifest>
