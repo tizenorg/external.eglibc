@@ -32,3 +32,4 @@ fetestexcept (int excepts)
 
   return (s.sw[0] >> 27) & excepts & FE_ALL_EXCEPT;
 }
+libm_hidden_def (fetestexcept)

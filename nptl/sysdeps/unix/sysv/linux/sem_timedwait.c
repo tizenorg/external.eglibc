@@ -90,7 +90,7 @@ sem_timedwait (sem_t *sem, const struct timespec *abstime)
       /* Disable asynchronous cancellation.  */
       __pthread_disable_asynccancel (oldtype);
 
-      if (err != 0 && err != -EWOULDBLOCK)
+      if (err != 0 && err != -EWOULDBLOCK && err != -EAGAIN)
 	{
 	  __set_errno (-err);
 	  err = -1;

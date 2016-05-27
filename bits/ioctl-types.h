@@ -64,7 +64,7 @@ struct sgttyb
 };
 
 #define	_IOT_sgttyb	/* Hurd ioctl type field.  */ \
-  _IOT (_IOTS (char), 6, _IOTS (short int), 1, 0, 0)
+  _IOT (_IOTS (char), 4, _IOTS (short int), 1, 0, 0)
 
 #if defined TIOCGWINSZ || defined TIOCSWINSZ
 /* Type of ARG for TIOCGWINSZ and TIOCSWINSZ requests.  */

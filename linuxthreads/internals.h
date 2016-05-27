@@ -381,6 +381,7 @@ extern int __pthread_timedsuspend_old(pthread_descr self, const struct timespec 
 extern void __pthread_restart_new(pthread_descr th);
 extern void __pthread_suspend_new(pthread_descr self);
 extern int __pthread_timedsuspend_new(pthread_descr self, const struct timespec *abs);
+extern int __pthread_timedsuspend_new_clk(pthread_descr self, const struct timespec *abs, clockid_t clock_id);
 
 extern void __pthread_wait_for_restart_signal(pthread_descr self);
 

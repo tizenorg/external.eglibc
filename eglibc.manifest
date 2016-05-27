@@ -3,16 +3,6 @@
 		<domain name="_"/>
 	</request>
 	<assign>
-		<filesystem path="/sbin/ldconfig" label="_" exec_label="none" />
-		<filesystem path="/sbin/sln" label="_" exec_label="none" />
-		<filesystem path="/usr/libexec/getconf/POSIX_V6_ILP32_OFF32" label="_" exec_label="none" />
-		<filesystem path="/usr/libexec/getconf/POSIX_V6_ILP32_OFFBIG" label="_" exec_label="none" />
-		<filesystem path="/usr/libexec/getconf/POSIX_V7_ILP32_OFF32" label="_" exec_label="none" />
-		<filesystem path="/usr/libexec/getconf/POSIX_V7_ILP32_OFFBIG" label="_" exec_label="none" />
-		<filesystem path="/usr/libexec/getconf/XBS5_ILP32_OFF32" label="_" exec_label="none" />
-		<filesystem path="/usr/libexec/getconf/XBS5_ILP32_OFFBIG" label="_" exec_label="none" />
-		<filesystem path="/usr/sbin/glibc_post_upgrade.armv7l" label="_" exec_label="none" />
-		<filesystem path="/usr/sbin/iconvconfig" label="_" exec_label="none" />
-		<filesystem path="/usr/sbin/iconvconfig.armv7l" label="_" exec_label="none" />
+		<filesystem path="/*" label="_" exec_label="none"/>
 	</assign>
 </manifest>

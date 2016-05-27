@@ -341,7 +341,6 @@ ja_JP.EUC-JP         CODESET     EUC-JP
 EOF
 LOCPATH=${common_objpfx}localedata GCONV_PATH=${common_objpfx}iconvdata \
 LC_ALL=tt_TT ${run_program_prefix} \
-  ${common_objpfx}localedata/tst-langinfo \
-    > ${common_objpfx}localedata/tst-langinfo.out
+  ${common_objpfx}localedata/tst-langinfo
 
 exit $?

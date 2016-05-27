@@ -25,6 +25,10 @@
 
 #if defined _LIBC && !defined NOT_IN_libc
 #include <linuxthreads/internals.h>
+#else
+/* This function is called to initialize the pthread library.  */
+/* We need a prototype before it is bellow marked as weak */
+extern void __pthread_initialize (void);
 #endif
 
 /* Mutex type.  */
@@ -71,12 +75,12 @@ typedef pthread_key_t __libc_key_t;
    initialized locks must be set to one due to the lack of normal
    atomic operations.) */
 
-#if __LT_SPINLOCK_INIT == 0
-#  define __libc_lock_define_initialized(CLASS,NAME) \
-  CLASS __libc_lock_t NAME;
-#else
+#ifdef __LT_INITIALIZER_NOT_ZERO
 #  define __libc_lock_define_initialized(CLASS,NAME) \
   CLASS __libc_lock_t NAME = PTHREAD_MUTEX_INITIALIZER;
+#else
+#  define __libc_lock_define_initialized(CLASS,NAME) \
+  CLASS __libc_lock_t NAME;
 #endif
 
 #define __libc_rwlock_define_initialized(CLASS,NAME) \
@@ -157,6 +161,9 @@ typedef pthread_key_t __libc_key_t;
 #endif
 #define __rtld_lock_init_recursive(NAME) \
   __libc_lock_init_recursive (NAME)
+
+#define __rtld_lock_initialize(NAME) \
+ (void) ((NAME) = (__rtld_lock_recursive_t) _RTLD_LOCK_RECURSIVE_INITIALIZER)
 
 /* Finalize the named lock variable, which must be locked.  It cannot be
    used again until __libc_lock_init is called again on it.  This must be
@@ -242,6 +249,9 @@ typedef pthread_key_t __libc_key_t;
     }									      \
   } while (0)
 
+/* Get once control variable.  */
+#define __libc_once_get(ONCE_CONTROL) \
+  ((ONCE_CONTROL) != PTHREAD_ONCE_INIT)
 
 /* Start critical region with cleanup.  */
 #define __libc_cleanup_region_start(DOIT, FCT, ARG) \
@@ -376,8 +386,10 @@ weak_extern (__pthread_initialize)
 weak_extern (__pthread_atfork)
 weak_extern (BP_SYM (_pthread_cleanup_push))
 weak_extern (BP_SYM (_pthread_cleanup_pop))
+#ifdef __USE_GNU
 weak_extern (BP_SYM (_pthread_cleanup_push_defer))
 weak_extern (BP_SYM (_pthread_cleanup_pop_restore))
+#endif
 # else
 #  pragma weak __pthread_mutex_init
 #  pragma weak __pthread_mutex_destroy
@@ -399,8 +411,10 @@ weak_extern (BP_SYM (_pthread_cleanup_pop_restore))
 #  pragma weak __pthread_once
 #  pragma weak __pthread_initialize
 #  pragma weak __pthread_atfork
+#ifdef __USE_GNU
 #  pragma weak _pthread_cleanup_push_defer
 #  pragma weak _pthread_cleanup_pop_restore
+#endif
 #  pragma weak _pthread_cleanup_push
 #  pragma weak _pthread_cleanup_pop
 # endif

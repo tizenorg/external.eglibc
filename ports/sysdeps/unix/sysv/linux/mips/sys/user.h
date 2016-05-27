@@ -20,6 +20,7 @@
 #define _SYS_USER_H	1
 
 #include <sgidefs.h>
+#include <unistd.h>
 
 /* The whole purpose of this file is for GDB and GDB only.  Don't read
    too much into it.  Don't use it for anything other than GDB unless
@@ -207,8 +208,7 @@ struct user {
 
 #endif
 
-#define PAGE_SHIFT		12
-#define PAGE_SIZE		(1UL << PAGE_SHIFT)
+#define PAGE_SIZE		(sysconf(_SC_PAGESIZE))
 #define PAGE_MASK		(~(PAGE_SIZE-1))
 #define NBPG			PAGE_SIZE
 #define UPAGES			1

@@ -191,11 +191,21 @@ libdir = $(exec_prefix)/lib
 endif
 inst_libdir = $(install_root)$(libdir)
 
+# Compat places to look for libraries
+ifndef extra_libdir
+extra_libdir = /lib:$(exec_prefix)/lib
+endif
+
 # Where to install the shared library and dynamic linker.
 ifndef slibdir
 slibdir = $(exec_prefix)/lib
 endif
 inst_slibdir = $(install_root)$(slibdir)
+
+# Directory of the dynamic linker in the ELF binaries
+ifndef rtlddir
+rtlddir := $(slibdir)
+endif
 
 # Prefix to put on files installed in $(libdir).  For libraries `libNAME.a',
 # the prefix is spliced between `lib' and the name, so the linker switch
@@ -481,7 +491,7 @@ ifndef +link-bounded
 endif
 ifndef config-LDFLAGS
 ifeq (yesyes,$(build-shared)$(elf))
-config-LDFLAGS = -Wl,-dynamic-linker=$(slibdir)/$(rtld-installed-name)
+config-LDFLAGS = -Wl,-dynamic-linker=$(rtlddir)/$(rtld-installed-name)
 endif
 endif
 ifndef link-libc
@@ -521,6 +531,10 @@ ifneq ($(libdir),$(slibdir))
 default-rpath = $(slibdir):$(libdir)
 else
 default-rpath = $(libdir)
+endif
+
+ifdef extra_libdir
+default-rpath += :$(extra_libdir)
 endif
 
 ifndef link-extra-libs

@@ -62,6 +62,7 @@ ENTRY(__getcontext)
 	movq	%rcx, oFPREGS(%rdi)
 	/* Save the floating-point environment.  */
 	fnstenv	(%rcx)
+	fldenv	(%rcx)
 	stmxcsr oMXCSR(%rdi)
 
 	/* Save the current signal mask with

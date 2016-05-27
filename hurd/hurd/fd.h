@@ -1,6 +1,5 @@
 /* File descriptors.
-   Copyright (C) 1993,1994,1995,1996,1997,1998,1999,2000,2001,2002,2006,2007
-   	Free Software Foundation, Inc.
+   Copyright (C) 1993-2012 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -60,11 +59,15 @@ extern struct mutex _hurd_dtable_lock; /* Locks those two variables.  */
    NULL.  The cell is unlocked; when ready to use it, lock it and check for
    it being unused.  */
 
+struct hurd_fd *_hurd_fd_get (int fd);
+
+#ifdef __USE_EXTERN_INLINES
 _HURD_FD_H_EXTERN_INLINE struct hurd_fd *
 _hurd_fd_get (int fd)
 {
   struct hurd_fd *descriptor;
 
+  HURD_CRITICAL_BEGIN;
   __mutex_lock (&_hurd_dtable_lock);
   if (fd < 0 || fd >= _hurd_dtablesize)
     descriptor = NULL;
@@ -87,9 +90,11 @@ _hurd_fd_get (int fd)
 	}
     }
   __mutex_unlock (&_hurd_dtable_lock);
+  HURD_CRITICAL_END;
 
   return descriptor;
 }
+#endif
 
 
 /* Evaluate EXPR with the variable `descriptor' bound to a pointer to the
@@ -137,6 +142,9 @@ _hurd_fd_get (int fd)
 /* Check if ERR should generate a signal.
    Returns the signal to take, or zero if none.  */
 
+int _hurd_fd_error_signal (error_t err);
+
+#ifdef __USE_EXTERN_INLINES
 _HURD_FD_H_EXTERN_INLINE int
 _hurd_fd_error_signal (error_t err)
 {
@@ -153,11 +161,15 @@ _hurd_fd_error_signal (error_t err)
       return 0;
     }
 }
+#endif
 
 /* Handle an error from an RPC on a file descriptor's port.  You should
    always use this function to handle errors from RPCs made on file
    descriptor ports.  Some errors are translated into signals.  */
 
+error_t _hurd_fd_error (int fd, error_t err);
+
+#ifdef __USE_EXTERN_INLINES
 _HURD_FD_H_EXTERN_INLINE error_t
 _hurd_fd_error (int fd, error_t err)
 {
@@ -170,20 +182,28 @@ _hurd_fd_error (int fd, error_t err)
     }
   return err;
 }
+#endif
 
 /* Handle error code ERR from an RPC on file descriptor FD's port.
    Set `errno' to the appropriate error code, and always return -1.  */
 
+int __hurd_dfail (int fd, error_t err);
+
+#ifdef __USE_EXTERN_INLINES
 _HURD_FD_H_EXTERN_INLINE int
 __hurd_dfail (int fd, error_t err)
 {
   errno = _hurd_fd_error (fd, err);
   return -1;
 }
+#endif
 
 /* Likewise, but do not raise SIGPIPE on EPIPE if flags contain
    MSG_NOSIGNAL.  */
 
+int __hurd_sockfail (int fd, int flags, error_t err);
+
+#ifdef __USE_EXTERN_INLINES
 _HURD_FD_H_EXTERN_INLINE int
 __hurd_sockfail (int fd, int flags, error_t err)
 {
@@ -192,6 +212,7 @@ __hurd_sockfail (int fd, int flags, error_t err)
   errno = err;
   return -1;
 }
+#endif
 
 /* Set up *FD to have PORT its server port, doing appropriate ctty magic.
    Does no locking or unlocking.  */
@@ -200,7 +221,8 @@ extern void _hurd_port2fd (struct hurd_fd *fd, io_t port, int flags);
 
 /* Allocate a new file descriptor and install PORT in it (doing any
    appropriate ctty magic); consumes a user reference on PORT.  FLAGS are
-   as for `open'; only O_IGNORE_CTTY is meaningful, but all are saved.
+   as for `open'; only O_IGNORE_CTTY and O_CLOEXEC are meaningful, but all are
+   saved.
 
    If the descriptor table is full, set errno, and return -1.
    If DEALLOC is nonzero, deallocate PORT first.  */

@@ -38,3 +38,4 @@ feupdateenv (const fenv_t *envp)
   /* Success.  */
   return 0;
 }
+libm_hidden_def (feupdateenv)

@@ -19,7 +19,9 @@
 
 #define PT_EI
 
-extern long int testandset (int *spinlock);
+#include <pthread.h>
+
+extern long int testandset (__atomic_lock_t *spinlock);
 extern int __compare_and_swap (long int *p, long int oldval, long int newval);
 
 #include <pt-machine.h>

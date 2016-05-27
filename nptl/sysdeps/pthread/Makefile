@@ -36,7 +36,9 @@ endif
 
 ifeq ($(have-forced-unwind),yes)
 tests += tst-mqueue8x
+ldflags-libgcc_s = -Wl,--as-needed -lgcc_s -Wl,--no-as-needed
 CFLAGS-tst-mqueue8x.c += -fexceptions
+LDFLAGS-tst-mqueue8x += $(ldflags-libgcc_s) 
 endif
 endif
 

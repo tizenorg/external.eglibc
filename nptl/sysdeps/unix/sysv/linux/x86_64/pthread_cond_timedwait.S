@@ -63,9 +63,9 @@ __pthread_cond_timedwait:
 	cfi_adjust_cfa_offset(8)
 	cfi_rel_offset(%r15, 0)
 #ifdef __ASSUME_FUTEX_CLOCK_REALTIME
-# define FRAME_SIZE 32
+# define FRAME_SIZE (32+8)
 #else
-# define FRAME_SIZE 48
+# define FRAME_SIZE (48+8)
 #endif
 	subq	$FRAME_SIZE, %rsp
 	cfi_adjust_cfa_offset(FRAME_SIZE)

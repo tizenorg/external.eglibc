@@ -35,6 +35,19 @@ posix_fadvise (int fd, off_t offset, off_t len, int advise)
     return INTERNAL_SYSCALL_ERRNO (ret, err);
   return 0;
 #else
+# ifdef __NR_fadvise64_64
+  INTERNAL_SYSCALL_DECL (err);  
+  int ret = INTERNAL_SYSCALL (fadvise64_64, err, 6, fd,
+			      __LONG_LONG_PAIR ((long) (offset >> 31),
+						(long) offset),
+			      __LONG_LONG_PAIR ((long) (len >> 31),
+						(long) len),
+			      advise);
+  if (INTERNAL_SYSCALL_ERROR_P (ret, err))
+    return INTERNAL_SYSCALL_ERRNO (ret, err);
+  return 0;
+# else
   return ENOSYS;
+# endif
 #endif
 }

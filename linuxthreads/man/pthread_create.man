@@ -9,38 +9,38 @@ pthread_create \- create a new thread
 int pthread_create(pthread_t * thread, pthread_attr_t * attr, void * (*start_routine)(void *), void * arg);
 
 .SH DESCRIPTION
-!pthread_create! creates a new thread of control that executes
+\fBpthread_create\fP creates a new thread of control that executes
 concurrently with the calling thread. The new thread applies the
-function |start_routine| passing it |arg| as first argument. The new
-thread terminates either explicitly, by calling !pthread_exit!(3),
-or implicitly, by returning from the |start_routine| function. The
-latter case is equivalent to calling !pthread_exit!(3) with the result
-returned by |start_routine| as exit code.
+function \fIstart_routine\fP passing it \fIarg\fP as first argument. The new
+thread terminates either explicitly, by calling \fBpthread_exit\fP(3),
+or implicitly, by returning from the \fIstart_routine\fP function. The
+latter case is equivalent to calling \fBpthread_exit\fP(3) with the result
+returned by \fIstart_routine\fP as exit code.
 
-The |attr| argument specifies thread attributes to be applied to the
-new thread. See !pthread_attr_init!(3) for a complete list of thread
-attributes. The |attr| argument can also be !NULL!, in which case
+The \fIattr\fP argument specifies thread attributes to be applied to the
+new thread. See \fBpthread_attr_init\fP(3) for a complete list of thread
+attributes. The \fIattr\fP argument can also be \fBNULL\fP, in which case
 default attributes are used: the created thread is joinable (not
 detached) and has default (non real-time) scheduling policy.
 
 .SH "RETURN VALUE"
 On success, the identifier of the newly created thread is stored in
-the location pointed by the |thread| argument, and a 0 is returned. On
+the location pointed by the \fIthread\fP argument, and a 0 is returned. On
 error, a non-zero error code is returned.
 
 .SH ERRORS
 .TP
-!EAGAIN!
+\fBEAGAIN\fP
 not enough system resources to create a process for the new thread.
 .TP
-!EAGAIN!
-more than !PTHREAD_THREADS_MAX! threads are already active.
+\fBEAGAIN\fP
+more than \fBPTHREAD_THREADS_MAX\fP threads are already active.
 
 .SH AUTHOR
 Xavier Leroy <Xavier.Leroy@inria.fr>
 
 .SH "SEE ALSO"
-!pthread_exit!(3),
-!pthread_join!(3),
-!pthread_detach!(3),
-!pthread_attr_init!(3).
+\fBpthread_exit\fP(3),
+\fBpthread_join\fP(3),
+\fBpthread_detach\fP(3),
+\fBpthread_attr_init\fP(3).

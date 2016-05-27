@@ -67,3 +67,8 @@ __chown (const char *file, uid_t owner, gid_t group)
 }
 libc_hidden_def (__chown)
 weak_alias (__chown, chown)
+
+#include <shlib-compat.h>
+#if SHLIB_COMPAT (libc, GLIBC_2_1, GLIBC_2_2)
+compat_symbol (libc, __chown, chown, GLIBC_2_1);
+#endif

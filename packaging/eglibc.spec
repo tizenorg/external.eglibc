@@ -21,11 +21,6 @@ Source11: build-locale-archive.c
 Source12: tzdata-update.c
 Source13: generate-supported.mk
 
-Patch1: slp-limit-hack.patch
-Patch2: eglibc-2.13-debian.patch.gz
-Patch3: glibc-arm-atomics-disable-qemu.patch
-Patch4:	use_fullpath.patch
-
 Provides: ldconfig
 # The dynamic linker supports DT_GNU_HASH
 Provides: rtld(GNU_HASH)
@@ -163,10 +158,6 @@ If unsure if you need this, don't install this package.
 
 %prep
 %setup -q
-%patch1 -p1
-%patch2 -p1
-%patch3 -p1
-%patch4 -p1
 # Hack here.
 rm -rf manual
 tar xf %SOURCE1
@@ -197,7 +188,7 @@ BuildFlags="$BuildFlags -fasynchronous-unwind-tables"
 
 EnableKernel="--enable-kernel=%{enablekernel}"
 echo "$GCC" > Gcc
-AddOns=`echo */configure | sed -e 's!/configure!!g;s!\(linuxthreads\|nptl\|rtkaio\|powerpc-cpu\)\( \|$\)!!g;s! \+$!!;s! !,!g;s!^!,!;/^,\*$/d'`
+AddOns=`echo */configure | sed -e 's!/configure!!g;s!\(linuxthreads\|libpthread\|nptl\|rtkaio\|powerpc-cpu\)\( \|$\)!!g;s! \+$!!;s! !,!g;s!^!,!;/^,\*$/d'`
 
 %ifarch %{arm}
 AddOns=,ports$AddOns
@@ -421,7 +412,7 @@ grep '%{_prefix}/bin' < rpm.filelist >> common.filelist
 grep '%{_prefix}/lib/locale' < rpm.filelist | grep -v /locale-archive.tmpl >> common.filelist
 %endif
 mkdir -p $RPM_BUILD_ROOT/%{_libexecdir}/
-mv -f build-%{nptl_target_cpu}-linuxnptl/login/pt_chown $RPM_BUILD_ROOT/%{_libexecdir}/ 
+mv -f build-%{nptl_target_cpu}-linuxnptl/login/pt_chown $RPM_BUILD_ROOT/%{_libexecdir}/
 echo '%{_libexecdir}/pt_chown' >> rpm.filelist
 grep '%{_libexecdir}/pt_chown' < rpm.filelist >> common.filelist
 grep '%{_prefix}/sbin/[^gi]' < rpm.filelist >> common.filelist
@@ -618,7 +609,7 @@ rm -f *.filelist*
 %attr(4711,root,root) %{_libexecdir}/pt_chown
 %doc documentation/*
 /usr/share/license/%{name}-common
-%manifest eglibc-common.manifest
+%manifest eglibc.manifest
 
 %files -f devel.filelist devel
 %defattr(-,root,root)
@@ -637,7 +628,7 @@ rm -f *.filelist*
 
 %files -f nscd.filelist -n nscd
 /usr/share/license/nscd
-%manifest nscd.manifest
+%manifest eglibc.manifest
 %defattr(-,root,root)
 %config(noreplace) /etc/nscd.conf
 %config /etc/rc.d/init.d/nscd

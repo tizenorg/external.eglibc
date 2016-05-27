@@ -123,8 +123,9 @@ __libc_res_nquery(res_state statp,
 		  int *answerp2_malloced)
 {
 	HEADER *hp = (HEADER *) answer;
+	HEADER *hp2;
 	int n, use_malloc = 0;
-        u_int oflags = statp->_flags;
+	u_int oflags = statp->_flags;
 
 	size_t bufsize = (type == T_UNSPEC ? 2 : 1) * QUERYSIZE;
 	u_char *buf = alloca (bufsize);
@@ -211,7 +212,7 @@ __libc_res_nquery(res_state statp,
 			if (statp->options & RES_DEBUG)
 				printf(";; res_nquery: retry without EDNS0\n");
 #endif
-                        goto again;
+			goto again;
 		}
 #ifdef DEBUG
 		if (statp->options & RES_DEBUG)
@@ -241,25 +242,24 @@ __libc_res_nquery(res_state statp,
 	  /* __libc_res_nsend might have reallocated the buffer.  */
 	  hp = (HEADER *) *answerp;
 
-	/* We simplify the following tests by assigning HP to HP2.  It
-	   is easy to verify that this is the same as ignoring all
-	   tests of HP2.  */
-	HEADER *hp2 = answerp2 ? (HEADER *) *answerp2 : hp;
-
-	if (n < (int) sizeof (HEADER) && answerp2 != NULL
-	    && *resplen2 > (int) sizeof (HEADER))
+	/* We simplify the following tests by assigning HP to HP2 or
+	   vice versa.  It is easy to verify that this is the same as
+	   ignoring all tests of HP or HP2.  */
+	if (answerp2 == NULL || *resplen2 < (int) sizeof (HEADER))
 	  {
-	    /* Special case of partial answer.  */
-	    assert (hp != hp2);
-	    hp = hp2;
-	  }
-	else if (answerp2 != NULL && *resplen2 < (int) sizeof (HEADER)
-		 && n > (int) sizeof (HEADER))
-	  {
-	    /* Special case of partial answer.  */
-	    assert (hp != hp2);
 	    hp2 = hp;
 	  }
+	else
+	  {
+	    hp2 = (HEADER *) *answerp2;
+	    if (n < (int) sizeof (HEADER))
+	      {
+	        hp = hp2;
+	      }
+	  }
+
+	/* Make sure both hp and hp2 are defined */
+	assert((hp != NULL) && (hp2 != NULL));
 
 	if ((hp->rcode != NOERROR || ntohs(hp->ancount) == 0)
 	    && (hp2->rcode != NOERROR || ntohs(hp2->ancount) == 0)) {
@@ -347,6 +347,7 @@ __libc_res_nsearch(res_state statp,
 	int trailing_dot, ret, saved_herrno;
 	int got_nodata = 0, got_servfail = 0, root_on_list = 0;
 	int tried_as_is = 0;
+	int searched = 0;
 
 	__set_errno (0);
 	RES_SET_H_ERRNO(statp, HOST_NOT_FOUND);  /* True if we never query. */
@@ -411,6 +412,7 @@ __libc_res_nsearch(res_state statp,
 		for (domain = (const char * const *)statp->dnsrch;
 		     *domain && !done;
 		     domain++) {
+			searched = 1;
 
 			if (domain[0][0] == '\0' ||
 			    (domain[0][0] == '.' && domain[0][1] == '\0'))
@@ -482,11 +484,11 @@ __libc_res_nsearch(res_state statp,
 	}
 
 	/*
-	 * If the name has any dots at all, and no earlier 'as-is' query
-	 * for the name, and "." is not on the search list, then try an as-is
-	 * query now.
+	 * f the query has not already been tried as is then try it
+	 * unless RES_NOTLDQUERY is set and there were no dots.
 	 */
-	if (dots && !(tried_as_is || root_on_list)) {
+	if ((dots || !searched || (statp->options & RES_NOTLDQUERY) == 0)
+	    && !(tried_as_is || root_on_list)) {
 		ret = __libc_res_nquerydomain(statp, name, NULL, class, type,
 					      answer, anslen, answerp,
 					      answerp2, nanswerp2, resplen2,

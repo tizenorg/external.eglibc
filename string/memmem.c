@@ -74,5 +74,6 @@ memmem (const void *haystack_start, size_t haystack_len,
   else
     return two_way_long_needle (haystack, haystack_len, needle, needle_len);
 }
+libc_hidden_def (memmem)
 
 #undef LONG_NEEDLE_THRESHOLD

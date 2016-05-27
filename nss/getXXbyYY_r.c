@@ -180,6 +180,9 @@ INTERNAL (REENTRANT_NAME) (ADD_PARAMS, LOOKUP_TYPE *resbuf, char *buffer,
     case -1:
       return errno;
     case 1:
+#ifdef NEED_H_ERRNO
+      any_service = true;
+#endif
       goto done;
     }
 #endif

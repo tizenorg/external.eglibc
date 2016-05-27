@@ -23,7 +23,7 @@ subdir		:= elf
 headers		= elf.h bits/elfclass.h link.h bits/link.h
 routines	= $(dl-routines) dl-support dl-iteratephdr \
 		  dl-addr enbl-secure dl-profstub \
-		  dl-origin dl-libc dl-sym dl-tsd dl-sysdep
+		  dl-origin dl-libc dl-sym dl-tsd dl-sysdep dl-altinit
 
 # The core dynamic linking functions are in libc for the static and
 # profiled libraries.
@@ -41,6 +41,10 @@ shared-only-routines += dl-caller
 # interpreter and operating independent of libc.
 rtld-routines	:= rtld $(dl-routines) dl-sysdep dl-environ dl-minimal
 all-rtld-routines = $(rtld-routines) $(sysdep-rtld-routines)
+
+# We only need to re-run initializers if ld.so and libc.so might be built
+# for different machines, so only shared libraries need dl-altinit.
+shared-only-routines = dl-altinit
 
 distribute	:= rtld-Rules \
 		   $(rtld-routines:=.c) dynamic-link.h do-rel.h dl-machine.h \
@@ -76,6 +80,7 @@ distribute	:= rtld-Rules \
 		   tst-tlsmod12.c tst-tls10.h tst-alignmod.c tst-alignmod2.c \
 		   circlemod1.c circlemod1a.c circlemod2.c circlemod2a.c \
 		   circlemod3.c circlemod3a.c nodlopenmod2.c \
+		   tst-tls19mod1.c tst-tls19mod2.c tst-tls19mod3.c \
 		   tls-macros.h \
 		   reldep8mod1.c reldep8mod2.c reldep8mod3.c \
 		   nodel2mod1.c nodel2mod2.c nodel2mod3.c \
@@ -174,7 +179,7 @@ ifeq (yes,$(have-initfini-array))
 tests += tst-array1 tst-array2 tst-array3 tst-array4 tst-array5
 endif
 ifeq (yes,$(build-static))
-tests-static = tst-tls1-static tst-tls2-static tst-stackguard1-static
+tests-static = tst-tls1-static tst-tls2-static tst-stackguard1-static tst-ptrguard1-static
 ifeq (yesyesyes,$(build-static)$(build-shared)$(elf))
 tests-static += tst-tls9-static
 tst-tls9-static-ENV = \
@@ -195,7 +200,7 @@ tests += loadtest restest1 preloadtest loadfail multiload origtest resolvfail \
 	 restest2 next dblload dblunload reldep5 reldep6 reldep7 reldep8 \
 	 circleload1 tst-tls3 tst-tls4 tst-tls5 tst-tls6 tst-tls7 tst-tls8 \
 	 tst-tls10 tst-tls11 tst-tls12 tst-tls13 tst-tls14 tst-tls15 \
-	 tst-tls16 tst-tls17 tst-tls18 tst-tls-dlinfo \
+	 tst-tls16 tst-tls17 tst-tls18 tst-tls19 tst-tls-dlinfo \
 	 tst-align tst-align2 $(tests-execstack-$(have-z-execstack)) \
 	 tst-dlmodcount tst-dlopenrpath tst-deep1 \
 	 tst-dlmopen1 tst-dlmopen2 tst-dlmopen3 \
@@ -203,7 +208,8 @@ tests += loadtest restest1 preloadtest loadfail multiload origtest resolvfail \
 	 tst-audit1 tst-audit2 \
 	 tst-stackguard1 tst-addr1 tst-thrlock \
 	 tst-unique1 tst-unique2 \
-	 tst-initorder
+	 tst-initorder \
+	 tst-ptrguard1
 #	 reldep9
 test-srcs = tst-pathopt
 tests-execstack-yes = tst-execstack tst-execstack-needed tst-execstack-prog
@@ -241,6 +247,7 @@ modules-names = testobj1 testobj2 testobj3 testobj4 testobj5 testobj6 \
 		tst-tlsmod13 tst-tlsmod13a tst-tlsmod14a tst-tlsmod14b \
 		tst-tlsmod15a tst-tlsmod15b tst-tlsmod16a tst-tlsmod16b \
 		$(tlsmod17a-modules) tst-tlsmod17b $(tlsmod18a-modules) \
+		tst-tls19mod1 tst-tls19mod2 tst-tls19mod3 \
 		circlemod1 circlemod1a circlemod2 circlemod2a \
 		circlemod3 circlemod3a \
 		reldep8mod1 reldep8mod2 reldep8mod3 \
@@ -393,7 +400,7 @@ $(objpfx)ld.so: $(objpfx)librtld.os $(ld-map)
 	  | $(AWK) '($$7 ~ /^UND(|EF)$$/ && $$1 != "0:" && $$4 != "REGISTER") { print; p=1 } END { exit p != 0 }'
 
 # interp.c exists just to get this string into the libraries.
-CFLAGS-interp.c = -D'RUNTIME_LINKER="$(slibdir)/$(rtld-installed-name)"' \
+CFLAGS-interp.c = -D'RUNTIME_LINKER="$(rtlddir)/$(rtld-installed-name)"' \
 		  -DNOT_IN_libc=1
 $(objpfx)interp.os: $(common-objpfx)config.make
 
@@ -415,7 +422,7 @@ $(objpfx)trusted-dirs.st: Makefile $(..)Makeconfig
 	$(make-target-directory)
 	echo "$(subst :, ,$(default-rpath) $(user-defined-trusted-dirs))"    \
 	| $(AWK) -f gen-trusted-dirs.awk > ${@:st=T};
-	echo '#define DL_DST_LIB "$(notdir $(slibdir))"' >> ${@:st=T}
+	echo '#define DL_DST_LIB "$(shell echo $(slibdir) | sed 's,/,,')"' >> ${@:st=T}
 	$(move-if-change) ${@:st=T} ${@:st=h}
 	touch $@
 CPPFLAGS-dl-load.c = -I$(objpfx). -I$(csu-objpfx).
@@ -436,7 +443,7 @@ ldso_install: $(inst_slibdir)/$(rtld-installed-name)
 endif
 
 
-common-ldd-rewrite = -e 's%@RTLD@%$(slibdir)/$(rtld-installed-name)%g' \
+common-ldd-rewrite = -e 's%@RTLD@%$(rtlddir)/$(rtld-installed-name)%g' \
 		     -e 's%@VERSION@%$(version)%g' \
 		     -e 's%@PKGVERSION@%$(PKGVERSION)%g' \
 		     -e 's%@REPORT_BUGS_TO@%$(REPORT_BUGS_TO)%g'
@@ -527,6 +534,8 @@ $(objpfx)tst-tlsmod13a.so: $(objpfx)tst-tlsmod13.so
 # For tst-tls9-static, make sure the modules it dlopens have libc.so in DT_NEEDED
 $(objpfx)tst-tlsmod5.so: $(common-objpfx)libc.so
 $(objpfx)tst-tlsmod6.so: $(common-objpfx)libc.so
+$(objpfx)tst-tls19mod1.so: $(objpfx)tst-tls19mod2.so $(objpfx)tst-tls19mod3.so
+$(objpfx)tst-tls19mod3.so: $(objpfx)ld.so
 $(objpfx)reldep8mod3.so: $(objpfx)reldep8mod1.so $(objpfx)reldep8mod2.so
 $(objpfx)nodel2mod3.so: $(objpfx)nodel2mod1.so $(objpfx)nodel2mod2.so
 $(objpfx)reldep9mod2.so: $(objpfx)reldep9mod1.so
@@ -824,6 +833,9 @@ $(patsubst %,$(objpfx)%.os,$(tlsmod18a-modules)): $(objpfx)tst-tlsmod18a%.os : t
 	$(compile-command.c) -DN=$*
 $(patsubst %,$(objpfx)%.so,$(tlsmod18a-modules)): $(objpfx)tst-tlsmod18a%.so: $(objpfx)ld.so
 
+$(objpfx)tst-tls19: $(libdl)
+$(objpfx)tst-tls19.out: $(objpfx)tst-tls19mod1.so
+
 CFLAGS-tst-align.c = $(stack-align-test-flags)
 CFLAGS-tst-align2.c = $(stack-align-test-flags)
 CFLAGS-tst-alignmod.c = $(stack-align-test-flags)
@@ -1065,6 +1077,12 @@ order2mod2.so-no-z-defs = yes
 tst-stackguard1-ARGS = --command "$(local-built-program-cmd) --child"
 tst-stackguard1-static-ARGS = --command "$(objpfx)tst-stackguard1-static --child"
 
+tst-ptrguard1-ARGS = --command "$(local-built-program-cmd) --child"
+# When built statically, the pointer guard interface uses
+# __pointer_chk_guard_local.
+CFLAGS-tst-ptrguard1-static.c = -DPTRGUARD_LOCAL
+tst-ptrguard1-static-ARGS = --command "$(objpfx)tst-ptrguard1-static --child"
+
 $(objpfx)tst-leaks1: $(libdl)
 $(objpfx)tst-leaks1-mem: $(objpfx)tst-leaks1.out
 	$(common-objpfx)malloc/mtrace $(objpfx)tst-leaks1.mtrace > $@
@@ -1191,6 +1209,7 @@ $(objpfx)tst-unique2: $(libdl) $(objpfx)tst-unique2mod1.so
 $(objpfx)tst-unique2.out: $(objpfx)tst-unique2mod2.so
 
 $(objpfx)tst-initorder.out: $(objpfx)tst-initorder
+	$(cross-test-wrapper) \
 	$(elf-objpfx)${rtld-installed-name} \
 	  --library-path $(rpath-link)$(patsubst %,:%,$(sysdep-library-path)) \
 	  $< > $@

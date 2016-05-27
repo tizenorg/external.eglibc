@@ -706,7 +706,7 @@ extern size_t fread (void *__restrict __ptr, size_t __size,
    This function is a possible cancellation points and therefore not
    marked with __THROW.  */
 extern size_t fwrite (__const void *__restrict __ptr, size_t __size,
-		      size_t __n, FILE *__restrict __s) __wur;
+		      size_t __n, FILE *__restrict __s);
 __END_NAMESPACE_STD
 
 #ifdef __USE_GNU
@@ -730,7 +730,7 @@ extern int fputs_unlocked (__const char *__restrict __s,
 extern size_t fread_unlocked (void *__restrict __ptr, size_t __size,
 			      size_t __n, FILE *__restrict __stream) __wur;
 extern size_t fwrite_unlocked (__const void *__restrict __ptr, size_t __size,
-			       size_t __n, FILE *__restrict __stream) __wur;
+			       size_t __n, FILE *__restrict __stream);
 #endif
 
 

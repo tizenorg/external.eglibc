@@ -1,4 +1,5 @@
-/* Copyright (C) 1991, 92, 93, 94, 95, 97 Free Software Foundation, Inc.
+/* Copyright (C) 1991, 92, 93, 94, 95, 97, 2010
+   Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -35,7 +36,8 @@ __execve (file_name, argv, envp)
     return -1;
 
   /* Hopefully this will not return.  */
-  err = _hurd_exec (__mach_task_self (), file, argv, envp);
+  err = _hurd_exec_file_name (__mach_task_self (), file,
+			      file_name, argv, envp);
 
   /* Oh well.  Might as well be tidy.  */
   __mach_port_deallocate (__mach_task_self (), file);

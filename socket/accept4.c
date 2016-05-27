@@ -35,8 +35,6 @@ accept4 (fd, addr, addr_len, flags)
   __set_errno (ENOSYS);
   return -1;
 }
-libc_hidden_def (accept4)
-
 
 stub_warning (accept4)
 #include <stub-tag.h>

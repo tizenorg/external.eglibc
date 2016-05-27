@@ -75,3 +75,6 @@ __tls_get_offset:\n\
      + (unsigned long) __builtin_thread_pointer (); }) 
 
 #endif
+
+/* Value used for dtv entries for which the allocation is delayed.  */
+#define TLS_DTV_UNALLOCATED	((void *) -1l)

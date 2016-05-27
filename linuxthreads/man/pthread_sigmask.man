@@ -19,36 +19,36 @@ int sigwait(const sigset_t *set, int *sig);
 
 .SH DESCRIPTION
 
-!pthread_sigmask! changes the signal mask for the calling thread as
-described by the |how| and |newmask| arguments. If |oldmask| is not
-!NULL!, the previous signal mask is stored in the location pointed to
-by |oldmask|. 
+\fBpthread_sigmask\fP changes the signal mask for the calling thread as
+described by the \fIhow\fP and \fInewmask\fP arguments. If \fIoldmask\fP is not
+\fBNULL\fP, the previous signal mask is stored in the location pointed to
+by \fIoldmask\fP. 
 
-The meaning of the |how| and |newmask| arguments is the same as for
-!sigprocmask!(2). If |how| is !SIG_SETMASK!, the signal mask is set to
-|newmask|. If |how| is !SIG_BLOCK!, the signals specified to |newmask|
-are added to the current signal mask.  If |how| is !SIG_UNBLOCK!, the
-signals specified to |newmask| are removed from the current signal
+The meaning of the \fIhow\fP and \fInewmask\fP arguments is the same as for
+\fBsigprocmask\fP(2). If \fIhow\fP is \fBSIG_SETMASK\fP, the signal mask is set to
+\fInewmask\fP. If \fIhow\fP is \fBSIG_BLOCK\fP, the signals specified to \fInewmask\fP
+are added to the current signal mask.  If \fIhow\fP is \fBSIG_UNBLOCK\fP, the
+signals specified to \fInewmask\fP are removed from the current signal
 mask.
 
 Recall that signal masks are set on a per-thread basis, but signal
-actions and signal handlers, as set with !sigaction!(2), are shared
+actions and signal handlers, as set with \fBsigaction\fP(2), are shared
 between all threads.
 
-!pthread_kill! send signal number |signo| to the thread
-|thread|. The signal is delivered and handled as described in
-!kill!(2).
+\fBpthread_kill\fP send signal number \fIsigno\fP to the thread
+\fIthread\fP. The signal is delivered and handled as described in
+\fBkill\fP(2).
 
-!sigwait! suspends the calling thread until one of the signals
-in |set| is delivered to the calling thread. It then stores the number
-of the signal received in the location pointed to by |sig| and
-returns. The signals in |set| must be blocked and not ignored on
-entrance to !sigwait!. If the delivered signal has a signal handler
-function attached, that function is |not| called.
+\fBsigwait\fP suspends the calling thread until one of the signals
+in \fIset\fP is delivered to the calling thread. It then stores the number
+of the signal received in the location pointed to by \fIsig\fP and
+returns. The signals in \fIset\fP must be blocked and not ignored on
+entrance to \fBsigwait\fP. If the delivered signal has a signal handler
+function attached, that function is \fInot\fP called.
 
 .SH CANCELLATION
 
-!sigwait! is a cancellation point.
+\fBsigwait\fP is a cancellation point.
 
 .SH "RETURN VALUE"
 
@@ -56,50 +56,50 @@ On success, 0 is returned. On failure, a non-zero error code is returned.
 
 .SH ERRORS
 
-The !pthread_sigmask! function returns the following error codes
+The \fBpthread_sigmask\fP function returns the following error codes
 on error:
 .RS
 .TP
-!EINVAL!
-|how| is not one of !SIG_SETMASK!, !SIG_BLOCK!, or !SIG_UNBLOCK!
+\fBEINVAL\fP
+\fIhow\fP is not one of \fBSIG_SETMASK\fP, \fBSIG_BLOCK\fP, or \fBSIG_UNBLOCK\fP
 
 .TP
-!EFAULT!
-|newmask| or |oldmask| point to invalid addresses
+\fBEFAULT\fP
+\fInewmask\fP or \fIoldmask\fP point to invalid addresses
 .RE
 
-The !pthread_kill! function returns the following error codes
+The \fBpthread_kill\fP function returns the following error codes
 on error:
 .RS
 .TP
-!EINVAL!
-|signo| is not a valid signal number
+\fBEINVAL\fP
+\fIsigno\fP is not a valid signal number
 
 .TP
-!ESRCH!
-the thread |thread| does not exist (e.g. it has already terminated)
+\fBESRCH\fP
+the thread \fIthread\fP does not exist (e.g. it has already terminated)
 .RE
 
-The !sigwait! function never returns an error.
+The \fBsigwait\fP function never returns an error.
 
 .SH AUTHOR
 Xavier Leroy <Xavier.Leroy@inria.fr>
 
 .SH "SEE ALSO"
-!sigprocmask!(2),
-!kill!(2),
-!sigaction!(2),
-!sigsuspend!(2).
+\fBsigprocmask\fP(2),
+\fBkill\fP(2),
+\fBsigaction\fP(2),
+\fBsigsuspend\fP(2).
 
 .SH NOTES
 
-For !sigwait! to work reliably, the signals being waited for must be
+For \fBsigwait\fP to work reliably, the signals being waited for must be
 blocked in all threads, not only in the calling thread, since
 otherwise the POSIX semantics for signal delivery do not guarantee
-that it's the thread doing the !sigwait! that will receive the signal.
+that it's the thread doing the \fBsigwait\fP that will receive the signal.
 The best way to achieve this is block those signals before any threads
 are created, and never unblock them in the program other than by
-calling !sigwait!.
+calling \fBsigwait\fP.
 
 .SH BUGS
 
@@ -112,11 +112,11 @@ not currently block the signal.
 
 In LinuxThreads, each thread is actually a kernel process with its own
 PID, so external signals are always directed to one particular thread.
-If, for instance, another thread is blocked in !sigwait! on that
+If, for instance, another thread is blocked in \fBsigwait\fP on that
 signal, it will not be restarted.
 
-The LinuxThreads implementation of !sigwait! installs dummy signal
-handlers for the signals in |set| for the duration of the wait. Since
+The LinuxThreads implementation of \fBsigwait\fP installs dummy signal
+handlers for the signals in \fIset\fP for the duration of the wait. Since
 signal handlers are shared between all threads, other threads must not
 attach their own signal handlers to these signals, or alternatively
 they should all block these signals (which is recommended anyway --

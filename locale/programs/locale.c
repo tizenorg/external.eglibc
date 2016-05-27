@@ -796,6 +796,7 @@ show_locale_vars (void)
 {
   size_t cat_no;
   const char *lcall = getenv ("LC_ALL") ? : "";
+  const char *language = getenv ("LANGUAGE") ? : "";
   const char *lang = getenv ("LANG") ? : "";
 
   auto void get_source (const char *name);
@@ -813,6 +814,9 @@ show_locale_vars (void)
 
   /* LANG has to be the first value.  */
   print_assignment ("LANG", lang, false);
+
+  if (getenv ("POSIXLY_CORRECT") == NULL)
+    printf ("LANGUAGE=%s\n", language);
 
   /* Now all categories in an unspecified order.  */
   for (cat_no = 0; cat_no < NCATEGORIES; ++cat_no)

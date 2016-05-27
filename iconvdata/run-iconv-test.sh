@@ -201,6 +201,24 @@ while read utf8 from filename <&5; do
 done
 exec 5<&-
 
+# Check for crashes in decoders.
+printf '\016\377\377\377\377\377\377\377' > $temp1
+for from in $iconv_modules ; do
+    echo $ac_n "test decoder $from $ac_c"
+    PROG=`eval echo $ICONV`
+    if $PROG < $temp1 >/dev/null 2>&1 ; then
+	: # fall through
+    else
+	status=$?
+	if test $status -gt 1 ; then
+	    echo "/FAILED"
+	    failed=1
+	    continue
+	fi
+    fi
+    echo "OK"
+done
+
 exit $failed
 # Local Variables:
 #  mode:shell-script

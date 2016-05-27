@@ -417,6 +417,20 @@ _dl_important_hwcaps (const char *platform, size_t platform_len, size_t *sz,
   /* For TLS enabled builds always add 'tls'.  */
   ++cnt;
 
+  if (__access ("/etc/ld.so.nohwcap", F_OK) == 0)
+    {
+      /* If hwcap is disabled, we only have the base directory to search.  */
+      result = (struct r_strlenpair *) malloc (sizeof (*result));
+      if (result == NULL)
+	goto no_memory;
+
+      result[0].str = (char *) result;  /* Does not really matter.  */
+      result[0].len = 0;
+
+      *sz = 1;
+      return result;
+    }
+
   /* Create temporary data structure to generate result table.  */
   temp = (struct r_strlenpair *) alloca (cnt * sizeof (*temp));
   m = 0;
@@ -496,8 +510,11 @@ _dl_important_hwcaps (const char *platform, size_t platform_len, size_t *sz,
   *sz = 1 << cnt;
   result = (struct r_strlenpair *) malloc (*sz * sizeof (*result) + total);
   if (result == NULL)
-    _dl_signal_error (ENOMEM, NULL, NULL,
-		      N_("cannot create capability list"));
+    {
+    no_memory:
+      _dl_signal_error (ENOMEM, NULL, NULL,
+		     	N_("cannot create capability list"));
+    }
 
   if (cnt == 1)
     {

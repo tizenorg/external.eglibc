@@ -37,9 +37,6 @@ extern void __init_misc (int, char **, char **);
 #ifdef USE_NONOPTION_FLAGS
 extern void __getopt_clean_environment (char **);
 #endif
-#ifndef SHARED
-extern void _dl_non_dynamic_init (void) internal_function;
-#endif
 extern void __libc_global_ctors (void);
 
 unsigned int __hurd_threadvar_max;
@@ -104,10 +101,6 @@ init1 (int argc, char *arg0, ...)
   char **argv = &arg0;
   char **envp = &argv[argc + 1];
   struct hurd_startup_data *d;
-#ifndef SHARED
-  extern ElfW(Phdr) *_dl_phdr;
-  extern size_t _dl_phnum;
-#endif
 
   while (*envp)
     ++envp;
@@ -118,26 +111,8 @@ init1 (int argc, char *arg0, ...)
      data block; the argument strings start there.  */
   if ((void *) d == argv[0])
     {
-#ifndef SHARED
-      /* We may need to see our own phdrs, e.g. for TLS setup.
-         Try the usual kludge to find the headers without help from
-	 the exec server.  */
-      extern const void _start;
-      const ElfW(Ehdr) *const ehdr = &_start;
-      _dl_phdr = (ElfW(Phdr) *) ((const void *) ehdr + ehdr->e_phoff);
-      _dl_phnum = ehdr->e_phnum;
-      assert (ehdr->e_phentsize == sizeof (ElfW(Phdr)));
-#endif
       return;
     }
-
-#ifndef SHARED
-  __libc_enable_secure = d->flags & EXEC_SECURE;
-
-  _dl_phdr = (ElfW(Phdr) *) d->phdr;
-  _dl_phnum = d->phdrsz / sizeof (ElfW(Phdr));
-  assert (d->phdrsz % sizeof (ElfW(Phdr)) == 0);
-#endif
 
   _hurd_init_dtable = d->dtable;
   _hurd_init_dtablesize = d->dtablesize;
@@ -172,13 +147,16 @@ init (int *data)
   char **envp = &argv[argc + 1];
   struct hurd_startup_data *d;
   unsigned long int threadvars[_HURD_THREADVAR_MAX];
+#ifndef SHARED
+  extern ElfW(Phdr) *_dl_phdr;
+  extern size_t _dl_phnum;
+#endif
 
   /* Provide temporary storage for thread-specific variables on the
      startup stack so the cthreads initialization code can use them
      for malloc et al, or so we can use malloc below for the real
      threadvars array.  */
   memset (threadvars, 0, sizeof threadvars);
-  threadvars[_HURD_THREADVAR_LOCALE] = (unsigned long int) &_nl_global_locale;
   __hurd_threadvar_stack_offset = (unsigned long int) threadvars;
 
   /* Since the cthreads initialization code uses malloc, and the
@@ -191,6 +169,39 @@ init (int *data)
   while (*envp)
     ++envp;
   d = (void *) ++envp;
+
+  /* If we are the bootstrap task started by the kernel,
+     then after the environment pointers there is no Hurd
+     data block; the argument strings start there.  */
+  if ((void *) d == argv[0])
+    {
+#ifndef SHARED
+      /* We may need to see our own phdrs, e.g. for TLS setup.
+         Try the usual kludge to find the headers without help from
+	 the exec server.  */
+      extern const void __executable_start;
+      const ElfW(Ehdr) *const ehdr = &__executable_start;
+      _dl_phdr = (ElfW(Phdr) *) ((const void *) ehdr + ehdr->e_phoff);
+      _dl_phnum = ehdr->e_phnum;
+      assert (ehdr->e_phentsize == sizeof (ElfW(Phdr)));
+#endif
+    }
+  else
+    {
+#ifndef SHARED
+      __libc_enable_secure = d->flags & EXEC_SECURE;
+
+      _dl_phdr = (ElfW(Phdr) *) d->phdr;
+      _dl_phnum = d->phdrsz / sizeof (ElfW(Phdr));
+      assert (d->phdrsz % sizeof (ElfW(Phdr)) == 0);
+#endif
+    }
+
+#ifndef SHARED
+  /* We need to setup TLS before starting sigthread */
+  extern void __pthread_initialize_minimal(void);
+  __pthread_initialize_minimal();
+#endif
 
   /* The user might have defined a value for this, to get more variables.
      Otherwise it will be zero on startup.  We must make sure it is set
@@ -211,6 +222,8 @@ init (int *data)
       struct hurd_startup_data *od;
 
       void switch_stacks (void);
+
+      __libc_stack_end = newsp;
 
       /* Copy per-thread variables from that temporary
 	 area onto the new cthread stack.  */
@@ -242,8 +255,8 @@ init (int *data)
       /* Push the user code address on the top of the new stack.  It will
 	 be the return address for `init1'; we will jump there with NEWSP
 	 as the stack pointer.  */
-      *--newsp = data[-1];
-      ((void **) data)[-1] = switch_stacks;
+      *--newsp = __builtin_return_address (0);
+      * ((void **) __builtin_frame_address (0) + 1) = &switch_stacks;
       /* Force NEWSP into %ecx and &init1 into %eax, which are not restored
 	 by function return.  */
       asm volatile ("# a %0 c %1" : : "a" (newsp), "c" (&init1));
@@ -320,11 +333,11 @@ first_init (void)
    stack set up just as the user will see it, so it can switch stacks.  */
 
 void
-_dl_init_first (void)
+_dl_init_first (int argc, ...)
 {
   first_init ();
 
-  init ((int *) __builtin_frame_address (0) + 2);
+  init (&argc);
 }
 #endif
 
@@ -351,23 +364,23 @@ strong_alias (posixland_init, __libc_init_first);
    This poorly-named function is called by static-start.S,
    which should not exist at all.  */
 void
-_hurd_stack_setup (void)
+_hurd_stack_setup (void *arg, ...)
 {
-  intptr_t caller = (intptr_t) __builtin_return_address (0);
+  void *caller = (&arg)[-1];
 
   void doinit (intptr_t *data)
     {
       /* This function gets called with the argument data at TOS.  */
-      void doinit1 (void)
+      void doinit1 (volatile int argc, ...)
 	{
-	  init ((int *) __builtin_frame_address (0) + 2);
+	  init ((int *) &argc);
 	}
 
       /* Push the user return address after the argument data, and then
          jump to `doinit1' (above), so it is as if __libc_init_first's
          caller had called `doinit1' with the argument data already on the
          stack.  */
-      *--data = caller;
+      *--data = (intptr_t) caller;
       asm volatile ("movl %0, %%esp\n" /* Switch to new outermost stack.  */
 		    "movl $0, %%ebp\n" /* Clear outermost frame pointer.  */
 		    "jmp *%1" : : "r" (data), "r" (&doinit1) : "sp");
@@ -376,7 +389,7 @@ _hurd_stack_setup (void)
 
   first_init ();
 
-  _hurd_startup ((void **) __builtin_frame_address (0) + 2, &doinit);
+  _hurd_startup (&arg, &doinit);
 }
 #endif
 

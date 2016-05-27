@@ -1,5 +1,4 @@
-/* Copyright (C) 1994,1995,1996,1997,2000,2001,2005
-	Free Software Foundation, Inc.
+/* Copyright (C) 1994-2012 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -105,7 +104,7 @@ timer_thread (void)
 	  __msg_sig_post_request (_hurd_msgport,
 				  _hurd_itimer_port,
 				  MACH_MSG_TYPE_MAKE_SEND_ONCE,
-				  SIGALRM, 0, __mach_task_self ());
+				  SIGALRM, SI_TIMER, __mach_task_self ());
 	  break;
 
 	case MACH_RCV_INTERRUPTED:
@@ -194,7 +193,7 @@ setitimer_locked (const struct itimerval *new, struct itimerval *old,
 	 run `restart_itimer' each time a SIGALRM would arrive.  */
       static struct hurd_signal_preemptor preemptor =
 	{
-	  __sigmask (SIGALRM), 0, 0,
+	  __sigmask (SIGALRM), SI_TIMER, SI_TIMER,
 	  &restart_itimer,
 	};
       __mutex_lock (&_hurd_siglock);
@@ -202,6 +201,7 @@ setitimer_locked (const struct itimerval *new, struct itimerval *old,
 	{
 	  preemptor.next = _hurdsig_preemptors;
 	  _hurdsig_preemptors = &preemptor;
+	  _hurdsig_preempted_set |= preemptor.signals;
 	}
       __mutex_unlock (&_hurd_siglock);
 
@@ -220,14 +220,15 @@ setitimer_locked (const struct itimerval *new, struct itimerval *old,
 	  /* Start up the itimer thread running `timer_thread' (below).  */
 	  if (err = __thread_create (__mach_task_self (),
 				     &_hurd_itimer_thread))
-	    return __hurd_fail (err);
+	    goto out;
 	  _hurd_itimer_thread_stack_base = 0; /* Anywhere.  */
 	  _hurd_itimer_thread_stack_size = __vm_page_size; /* Small stack.  */
-	  if (err = __mach_setup_thread (__mach_task_self (),
+	  if ((err = __mach_setup_thread (__mach_task_self (),
 					 _hurd_itimer_thread,
 					 &timer_thread,
 					 &_hurd_itimer_thread_stack_base,
 					 &_hurd_itimer_thread_stack_size))
+	      || (err = __mach_setup_tls(_hurd_itimer_thread)))
 	    {
 	      __thread_terminate (_hurd_itimer_thread);
 	      _hurd_itimer_thread = MACH_PORT_NULL;

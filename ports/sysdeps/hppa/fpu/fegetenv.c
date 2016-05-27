@@ -33,3 +33,4 @@ fegetenv (fenv_t *envp)
   memcpy(envp, buf, sizeof (*envp));
   return 0;
 }
+libm_hidden_def (fegetenv)

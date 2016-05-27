@@ -61,7 +61,7 @@ __open_catalog (const char *cat_name, const char *nlspath, const char *env_var,
       char *old_buf = buf;						      \
       bufmax += (bufmax < 256 + (n)) ? 256 + (n) : bufmax;		      \
       buf = realloc (buf, bufmax);					      \
-      if (__builtin_expect (buf == NULL, 0))				      \
+      if (__glibc_unlikely (buf == NULL))				      \
 	{								      \
 	  free (old_buf);						      \
 	  return -1;							      \

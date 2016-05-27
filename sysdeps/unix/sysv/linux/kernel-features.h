@@ -85,6 +85,18 @@
 # define __ASSUME_SENDFILE		1
 #endif
 
+/* Some architectures use the socketcall multiplexer for some or all
+   socket-related operations, via a socket.S file in glibc, instead of
+   separate syscalls.  __ASSUME_SOCKETCALL is defined for such
+   architectures.  */
+#if defined __i386__ \
+    || defined __powerpc__ \
+    || defined __s390__ \
+    || defined __sh__ \
+    || defined __sparc__
+# define __ASSUME_SOCKETCALL		1
+#endif
+
 /* Only very old kernels had no real symlinks for terminal descriptors
    in /proc/self/fd.  */
 #if __LINUX_KERNEL_VERSION >= 131584
@@ -498,10 +510,36 @@
 # define __ASSUME_SIGNALFD4	1
 #endif
 
-/* Support for the accept4 syscall was added in 2.6.28.  */
-#if __LINUX_KERNEL_VERSION >= 0x02061c \
-    && (defined __i386__ || defined __x86_64__ || defined __powerpc__ \
-	|| defined __sparc__ || defined __s390__)
+/* Support for accept4 functionality was added in 2.6.28, but for some
+   architectures using a separate syscall rather than socketcall that
+   syscall was only added later, and some architectures first had
+   socketcall support then a separate syscall.  Define
+   __ASSUME_ACCEPT4_SOCKETCALL if glibc uses socketcall on this
+   architecture and accept4 is available through socketcall,
+   __ASSUME_ACCEPT4_SYSCALL if it is available through a separate
+   syscall, __ASSUME_ACCEPT4_SYSCALL_WITH_SOCKETCALL if it became
+   available through a separate syscall at the same time as through
+   socketcall, and __ASSUME_ACCEPT4 if the accept4 function is known
+   to work.  */
+#if __LINUX_KERNEL_VERSION >= 0x02061c && defined __ASSUME_SOCKETCALL
+# define __ASSUME_ACCEPT4_SOCKETCALL	1
+#endif
+
+/* The accept4 syscall was added for x86_64 and SPARC in 2.6.28,
+   for PowerPC and SH in 2.6.37, and for IA64 in 3.3.  */
+#if (__LINUX_KERNEL_VERSION >= 0x02061c			\
+     && (defined __x86_64__ || defined __sparc__))	\
+    || (__LINUX_KERNEL_VERSION >= 0x020625		\
+	&& (defined __powerpc__ || defined __sh__))	\
+    || (__LINUX_KERNEL_VERSION >= 0x030300		\
+	&& (defined __ia64))
+# define __ASSUME_ACCEPT4_SYSCALL	1
+#endif
+#ifdef __sparc__
+# define __ASSUME_ACCEPT4_SYSCALL_WITH_SOCKETCALL	1
+#endif
+
+#if defined __ASSUME_ACCEPT4_SOCKETCALL || defined __ASSUME_ACCEPT4_SYSCALL
 # define __ASSUME_ACCEPT4	1
 #endif
 
@@ -526,8 +564,26 @@
 # define __ASSUME_F_GETOWN_EX	1
 #endif
 
-/* Support for the recvmmsg syscall was added in 2.6.33.  */
-#if __LINUX_KERNEL_VERSION >= 0x020621
+/* Support for recvmmsg functionality was added in 2.6.33.  The macros
+   defined correspond to those for accept4.  */
+#if __LINUX_KERNEL_VERSION >= 0x020621 && defined __ASSUME_SOCKETCALL
+# define __ASSUME_RECVMMSG_SOCKETCALL	1
+#endif
+
+/* The recvmmsg syscall was added for i386, x86_64n SPARC and IA64 in
+   2.6.33, and for PowerPC and SH in 2.6.37.  */
+#if (__LINUX_KERNEL_VERSION >= 0x020621			\
+     && (defined __i386__ || defined __x86_64__ || defined __sparc__	 \
+	 || defined __ia64__))	 \
+    || (__LINUX_KERNEL_VERSION >= 0x020625		\
+	&& (defined __powerpc__ || defined __sh__))
+# define __ASSUME_RECVMMSG_SYSCALL	1
+#endif
+#if defined __i386__ || defined __sparc__
+# define __ASSUME_RECVMMSG_SYSCALL_WITH_SOCKETCALL	1
+#endif
+
+#if defined __ASSUME_RECVMMSG_SOCKETCALL || defined __ASSUME_RECVMMSG_SYSCALL
 # define __ASSUME_RECVMMSG	1
 #endif
 

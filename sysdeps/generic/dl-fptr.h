@@ -40,6 +40,9 @@ struct link_map;
 
 extern ElfW(Addr) _dl_boot_fptr_table [];
 
+/* Must be called before any other function.  */
+extern void _dl_fptr_init (void);
+
 extern ElfW(Addr) _dl_make_fptr (struct link_map *, const ElfW(Sym) *,
 				 ElfW(Addr));
 

@@ -10,44 +10,44 @@ int pthread_atfork(void (*prepare)(void), void (*parent)(void), void (*child)(vo
 
 .SH DESCRIPTION
 
-!pthread_atfork! registers handler functions to be called just before
-and just after a new process is created with !fork!(2). The |prepare|
+\fBpthread_atfork\fP registers handler functions to be called just before
+and just after a new process is created with \fBfork\fP(2). The \fIprepare\fP
 handler will be called from the parent process, just before the new
-process is created. The |parent| handler will be called from the parent
-process, just before !fork!(2) returns. The |child| handler will be
-called from the child process, just before !fork!(2) returns.
+process is created. The \fIparent\fP handler will be called from the parent
+process, just before \fBfork\fP(2) returns. The \fIchild\fP handler will be
+called from the child process, just before \fBfork\fP(2) returns.
 
-One or several of the three handlers |prepare|, |parent| and |child|
-can be given as !NULL!, meaning that no handler needs to be called at
+One or several of the three handlers \fIprepare\fP, \fIparent\fP and \fIchild\fP
+can be given as \fBNULL\fP, meaning that no handler needs to be called at
 the corresponding point.
 
-!pthread_atfork! can be called several times to install several sets
-of handlers. At !fork!(2) time, the |prepare| handlers are called in
-LIFO order (last added with !pthread_atfork!, first called before !fork!),
-while the |parent| and |child| handlers are called in FIFO order
+\fBpthread_atfork\fP can be called several times to install several sets
+of handlers. At \fBfork\fP(2) time, the \fIprepare\fP handlers are called in
+LIFO order (last added with \fBpthread_atfork\fP, first called before \fBfork\fP),
+while the \fIparent\fP and \fIchild\fP handlers are called in FIFO order
 (first added, first called).
 
-To understand the purpose of !pthread_atfork!, recall that !fork!(2)
+To understand the purpose of \fBpthread_atfork\fP, recall that \fBfork\fP(2)
 duplicates the whole memory space, including mutexes in their current
 locking state, but only the calling thread: other threads are not
 running in the child process.  The mutexes are not usable after the
-!fork! and must be initialized with |pthread_mutex_init| in the child
+\fBfork\fP and must be initialized with \fIpthread_mutex_init\fP in the child
 process.  This is a limitation of the current implementation and might
 or might not be present in future versions.
 
 .SH "RETURN VALUE"
 
-!pthread_atfork! returns 0 on success and a non-zero error code on error.
+\fBpthread_atfork\fP returns 0 on success and a non-zero error code on error.
 
 .SH ERRORS
 .TP
-!ENOMEM!
+\fBENOMEM\fP
 insufficient memory available to register the handlers.
 
 .SH AUTHOR
 Xavier Leroy <Xavier.Leroy@inria.fr>
 
 .SH "SEE ALSO"
-!fork!(2),
-!pthread_mutex_lock!(3),
-!pthread_mutex_unlock!(3).
+\fBfork\fP(2),
+\fBpthread_mutex_lock\fP(3),
+\fBpthread_mutex_unlock\fP(3).

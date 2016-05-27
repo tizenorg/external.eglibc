@@ -210,7 +210,7 @@ pthread_rwlock_timedrdlock:
 	cfi_restore(%r12)
 	retq
 
-#ifdef __ASSUME_PRIVATE_FUTEX
+#ifdef __ASSUME_FUTEX_CLOCK_REALTIME
 	cfi_adjust_cfa_offset(16)
 	cfi_rel_offset(%r12, 8)
 	cfi_rel_offset(%r13, 0)

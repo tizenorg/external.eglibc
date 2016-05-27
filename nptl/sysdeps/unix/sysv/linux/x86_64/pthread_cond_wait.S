@@ -45,7 +45,7 @@ __pthread_cond_wait:
 	cfi_lsda(DW_EH_PE_udata4, .LexceptSTART)
 #endif
 
-#define FRAME_SIZE 32
+#define FRAME_SIZE (32+8)
 	leaq	-FRAME_SIZE(%rsp), %rsp
 	cfi_adjust_cfa_offset(FRAME_SIZE)
 

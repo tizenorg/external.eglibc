@@ -1,5 +1,6 @@
 /* Test case for x86-64 preserved registers in dynamic linker.  */
 
+#ifdef __AVX__
 #include <stdlib.h>
 #include <string.h>
 #include <cpuid.h>
@@ -8,14 +9,28 @@
 extern __m128i audit_test (__m128i, __m128i, __m128i, __m128i,
 			   __m128i, __m128i, __m128i, __m128i);
 
-int
-main (void)
+
+static int
+avx_enabled (void)
 {
   unsigned int eax, ebx, ecx, edx;
 
+  if (__get_cpuid (1, &eax, &ebx, &ecx, &edx) == 0
+      || (ecx & (bit_AVX | bit_OSXSAVE)) != (bit_AVX | bit_OSXSAVE))
+    return 0;
+
+  /* Check the OS has AVX and SSE saving enabled.  */
+  asm ("xgetbv" : "=a" (eax), "=d" (edx) : "c" (0));
+
+  return (eax & 6) == 6;
+}
+
+
+int
+main (void)
+{
   /* Run AVX test only if AVX is supported.  */
-  if (__get_cpuid (1, &eax, &ebx, &ecx, &edx)
-      && (ecx & bit_AVX))
+  if (avx_enabled ())
     {
       __m128i xmm = _mm_setzero_si128 ();
       __m128i ret = audit_test (xmm, xmm, xmm, xmm, xmm, xmm, xmm, xmm);
@@ -26,3 +41,10 @@ main (void)
     }
   return 0;
 }
+#else
+int
+main (void)
+{
+  return 0;
+}
+#endif

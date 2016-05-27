@@ -44,6 +44,7 @@
 #include <sys/poll.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <time.h>
 
 #ifdef USE_IN_LIBIO
 # include <wchar.h>
@@ -243,6 +244,11 @@ again:
     {
       if (errno == EINTR)
 	goto again;
+      if (errno == EMFILE)
+        {
+          struct timespec ts = { .tv_sec = 0, .tv_nsec = 50000000 };
+          __nanosleep(&ts , NULL);
+        }
       return FALSE;
     }
   /*

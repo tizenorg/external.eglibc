@@ -17,6 +17,8 @@
    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307 USA.  */
 
+#ifndef _PPC_DL_TLS_H
+# define _PPC_DL_TLS_H 1
 
 /* Type used for the representation of TLS information in the TOC.  */
 typedef struct
@@ -47,3 +49,8 @@ extern void *__tls_get_addr (tls_index *ti);
 # define GET_ADDR_OFFSET	(ti->ti_offset + TLS_DTV_OFFSET)
 # define __TLS_GET_ADDR(__ti)	(__tls_get_addr (__ti) - TLS_DTV_OFFSET)
 #endif
+
+/* Value used for dtv entries for which the allocation is delayed.  */
+#define TLS_DTV_UNALLOCATED	((void *) -1l)
+
+#endif /* dl-tls.h */

@@ -14,26 +14,26 @@ int pthread_mutexattr_getkind_np(const pthread_mutexattr_t *attr, int *kind);
 
 .SH DESCRIPTION
 
-These functions are deprecated, use !pthread_mutexattr_settype!(3)
-and !pthread_mutexattr_gettype!(3) instead.
+These functions are deprecated, use \fBpthread_mutexattr_settype\fP(3)
+and \fBpthread_mutexattr_gettype\fP(3) instead.
 
 .SH "RETURN VALUE"
-!pthread_mutexattr_getkind_np! always returns 0.
+\fBpthread_mutexattr_getkind_np\fP always returns 0.
 
-!pthread_mutexattr_setkind_np! returns 0 on success and a non-zero
+\fBpthread_mutexattr_setkind_np\fP returns 0 on success and a non-zero
 error code on error.
 
 .SH ERRORS
 
-On error, !pthread_mutexattr_setkind_np! returns the following error code:
+On error, \fBpthread_mutexattr_setkind_np\fP returns the following error code:
 .TP
-!EINVAL!
-|kind| is neither !PTHREAD_MUTEX_FAST_NP! nor !PTHREAD_MUTEX_RECURSIVE_NP!
-nor !PTHREAD_MUTEX_ERRORCHECK_NP!
+\fBEINVAL\fP
+\fIkind\fP is neither \fBPTHREAD_MUTEX_FAST_NP\fP nor \fBPTHREAD_MUTEX_RECURSIVE_NP\fP
+nor \fBPTHREAD_MUTEX_ERRORCHECK_NP\fP
 
 .SH AUTHOR
 Xavier Leroy <Xavier.Leroy@inria.fr>
 
 .SH "SEE ALSO"
-!pthread_mutexattr_settype!(3),
-!pthread_mutexattr_gettype!(3).
+\fBpthread_mutexattr_settype\fP(3),
+\fBpthread_mutexattr_gettype\fP(3).

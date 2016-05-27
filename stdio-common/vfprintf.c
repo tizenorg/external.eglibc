@@ -248,6 +248,15 @@ vfprintf (FILE *s, const CHAR_T *format, va_list ap)
      0 if unknown.  */
   int readonly_format = 0;
 
+  /* For the argument descriptions, which may be allocated on the heap.  */
+  void *args_malloced = NULL;
+
+  /* For positional argument handling.  */
+  struct printf_spec *specs;
+
+  /* Track if we malloced the SPECS array and thus must free it.  */
+  bool specs_malloced = false;
+
   /* This table maps a character into a number representing a
      class.  In each step there is a destination label for each
      class.  */
@@ -1660,17 +1669,18 @@ do_positional:
     /* Array with information about the needed arguments.  This has to
        be dynamically extensible.  */
     size_t nspecs = 0;
-    size_t nspecs_max = 32;	/* A more or less arbitrary start value.  */
-    struct printf_spec *specs
-      = alloca (nspecs_max * sizeof (struct printf_spec));
+    /* A more or less arbitrary start value.  */
+    size_t nspecs_size = 32 * sizeof (struct printf_spec);
 
+    specs = alloca (nspecs_size);
     /* The number of arguments the format string requests.  This will
        determine the size of the array needed to store the argument
        attributes.  */
     size_t nargs = 0;
-    int *args_type;
-    union printf_arg *args_value = NULL;
+    size_t bytes_per_arg;
+    union printf_arg *args_value;
     int *args_size;
+    int *args_type;
 
     /* Positional parameters refer to arguments directly.  This could
        also determine the maximum number of arguments.  Track the
@@ -1680,7 +1690,8 @@ do_positional:
     /* Just a counter.  */
     size_t cnt;
 
-    free (workstart);
+    if (__builtin_expect (workstart != NULL, 0))
+      free (workstart);
     workstart = NULL;
 
     if (! LOCALE_SUPPORT)
@@ -1701,14 +1712,42 @@ do_positional:
 
     for (f = lead_str_end; *f != L_('\0'); f = specs[nspecs++].next_fmt)
       {
-	if (nspecs >= nspecs_max)
+	if (nspecs * sizeof (*specs) >= nspecs_size)
 	  {
 	    /* Extend the array of format specifiers.  */
+	    if (nspecs_size * 2 < nspecs_size)
+	      {
+		__set_errno (ENOMEM);
+		done = -1;
+		goto all_done;
+	      }
 	    struct printf_spec *old = specs;
-	    specs = extend_alloca (specs, nspecs_max, 2 * nspecs_max);
+	    if (__libc_use_alloca (2 * nspecs_size))
+	      specs = extend_alloca (specs, nspecs_size, 2 * nspecs_size);
+	    else
+	      {
+		nspecs_size *= 2;
+		specs = malloc (nspecs_size);
+		if (specs == NULL)
+		  {
+		    __set_errno (ENOMEM);
+		    specs = old;
+		    done = -1;
+		    goto all_done;
+		  }
+	      }
 
 	    /* Copy the old array's elements to the new space.  */
-	    memmove (specs, old, nspecs * sizeof (struct printf_spec));
+	    memmove (specs, old, nspecs * sizeof (*specs));
+
+	    /* If we had previously malloc'd space for SPECS, then
+	       release it after the copy is complete.  */
+	    if (specs_malloced)
+	      free (old);
+
+	    /* Now set SPECS_MALLOCED if needed.  */
+	    if (!__libc_use_alloca (nspecs_size))
+	      specs_malloced = true;
 	  }
 
 	/* Parse the format specifier.  */
@@ -1721,13 +1760,38 @@ do_positional:
 
     /* Determine the number of arguments the format string consumes.  */
     nargs = MAX (nargs, max_ref_arg);
+    /* Calculate total size needed to represent a single argument across
+       all three argument-related arrays.  */
+    bytes_per_arg = sizeof (*args_value) + sizeof (*args_size)
+                    + sizeof (*args_type);
 
-    /* Allocate memory for the argument descriptions.  */
-    args_type = alloca (nargs * sizeof (int));
+    /* Check for potential integer overflow.  */
+    if (__builtin_expect (nargs > SIZE_MAX / bytes_per_arg, 0))
+      {
+         __set_errno (ERANGE);
+         done = -1;
+         goto all_done;
+      }
+
+    /* Allocate memory for all three argument arrays.  */
+    if (__libc_use_alloca (nargs * bytes_per_arg))
+        args_value = alloca (nargs * bytes_per_arg);
+    else
+      {
+        args_value = args_malloced = malloc (nargs * bytes_per_arg);
+        if (args_value == NULL)
+          {
+            done = -1;
+            goto all_done;
+          }
+      }
+
+    /* Set up the remaining two arrays to each point past the end of the
+       prior array, since space for all three has been allocated now.  */
+    args_size = &args_value[nargs].pa_int;
+    args_type = &args_size[nargs];
     memset (args_type, s->_flags2 & _IO_FLAGS2_FORTIFY ? '\xff' : '\0',
-	    nargs * sizeof (int));
-    args_value = alloca (nargs * sizeof (union printf_arg));
-    args_size = alloca (nargs * sizeof (int));
+	    nargs * sizeof (*args_type));
 
     /* XXX Could do sanity check here: If any element in ARGS_TYPE is
        still zero after this loop, format is invalid.  For now we
@@ -1910,6 +1974,11 @@ do_positional:
 	      {
 		workstart = (CHAR_T *) malloc ((MAX (prec, width) + 32)
 					       * sizeof (CHAR_T));
+		if (workstart == NULL)
+		  {
+		    done = -1;
+		    goto all_done;
+		  }
 		workend = workstart + (MAX (prec, width) + 32);
 	      }
 	  }
@@ -1985,7 +2054,8 @@ do_positional:
 	    break;
 	  }
 
-	free (workstart);
+	if (__builtin_expect (workstart != NULL, 0))
+	  free (workstart);
 	workstart = NULL;
 
 	/* Write the following constant string.  */
@@ -1996,6 +2066,10 @@ do_positional:
   }
 
 all_done:
+  if (specs_malloced)
+    free (specs);
+  if (__builtin_expect (args_malloced != NULL, 0))
+    free (args_malloced);
   if (__builtin_expect (workstart != NULL, 0))
     free (workstart);
   /* Unlock the stream.  */

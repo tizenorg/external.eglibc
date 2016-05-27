@@ -67,6 +67,8 @@ distribute	:= memcopy.h pagecopy.h tst-svc.expect test-string.h	\
 		   str-two-way.h
 
 
+xtests = tst-strcoll-overflow
+
 include ../Rules
 
 

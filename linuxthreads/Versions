@@ -172,6 +172,9 @@ libpthread {
     pthread_cond_wait; pthread_cond_timedwait;
     pthread_cond_signal; pthread_cond_broadcast;
   }
+  GLIBC_2.3.3 {
+    pthread_condattr_getclock; pthread_condattr_setclock;
+  }
 
   # Hey you!!  Yes, YOU!  Do not add new symbols here!
   # The linuxthreads libpthread ABI froze at GLIBC_2.3.2 and lacks

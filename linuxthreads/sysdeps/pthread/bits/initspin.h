@@ -23,6 +23,7 @@
 #define __LT_SPINLOCK_INIT 0
 
 /* Macros for lock initializers, using the above definition. */
-#define __LOCK_INITIALIZER { 0, __LT_SPINLOCK_INIT }
+#define __LOCK_INITIALIZER ((struct _pthread_fastlock){ 0, __LT_SPINLOCK_INIT })
+#define __LOCK_ALT_INITIALIZER { 0, __LT_SPINLOCK_INIT }
 #define __ALT_LOCK_INITIALIZER { 0, __LT_SPINLOCK_INIT }
 #define __ATOMIC_INITIALIZER { 0, __LT_SPINLOCK_INIT }

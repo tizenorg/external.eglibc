@@ -125,7 +125,7 @@ new_composite_name (int category, const char *newnames[__LC_LAST])
 			    _nl_global_locale.__names[i]);
 	last_len = strlen (name);
 	cumlen += _nl_category_name_sizes[i] + 1 + last_len + 1;
-	if (i > 0 && same && strcmp (name, newnames[0]) != 0)
+	if (same && name != newnames[0] && strcmp (name, newnames[0]) != 0)
 	  same = 0;
       }
 
@@ -244,6 +244,8 @@ setlocale (int category, const char *locale)
 	 of entries of the form `CATEGORY=VALUE'.  */
       const char *newnames[__LC_LAST];
       struct __locale_data *newdata[__LC_LAST];
+      /* Copy of the locale argument, for in-place splitting.  */
+      char *locale_copy = NULL;
 
       /* Set all name pointers to the argument name.  */
       for (category = 0; category < __LC_LAST; ++category)
@@ -253,7 +255,13 @@ setlocale (int category, const char *locale)
       if (__builtin_expect (strchr (locale, ';') != NULL, 0))
 	{
 	  /* This is a composite name.  Make a copy and split it up.  */
-	  char *np = strdupa (locale);
+	  locale_copy = strdup (locale);
+	  if (__glibc_unlikely (locale_copy == NULL))
+	    {
+	      __libc_rwlock_unlock (__libc_setlocale_lock);
+	      return NULL;
+	    }
+	  char *np = locale_copy;
 	  char *cp;
 	  int cnt;
 
@@ -271,6 +279,7 @@ setlocale (int category, const char *locale)
 		{
 		error_return:
 		  __libc_rwlock_unlock (__libc_setlocale_lock);
+		  free (locale_copy);
 
 		  /* Bogus category name.  */
 		  ERROR_RETURN;
@@ -363,8 +372,9 @@ setlocale (int category, const char *locale)
       /* Critical section left.  */
       __libc_rwlock_unlock (__libc_setlocale_lock);
 
-      /* Free the resources (the locale path variable).  */
+      /* Free the resources.  */
       free (locale_path);
+      free (locale_copy);
 
       return composite;
     }

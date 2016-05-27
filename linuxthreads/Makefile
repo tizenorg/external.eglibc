@@ -51,6 +51,7 @@ libpthread-routines := attr cancel condvar join manager mutex ptfork \
 		       ptw-open ptw-open64 ptw-pause ptw-pread ptw-pread64 \
 		       ptw-pwrite ptw-pwrite64 ptw-tcdrain ptw-wait \
 		       ptw-waitpid pt-system old_pthread_atfork pthread_atfork \
+		       pthread_condattr_getclock pthread_condattr_setclock \
 		       ptcleanup
 #		       pthread_setuid pthread_seteuid pthread_setreuid \
 #		       pthread_setresuid \
@@ -111,7 +112,7 @@ tests = ex1 ex2 ex3 ex4 ex5 ex6 ex7 ex8 ex9 $(librt-tests) ex12 ex13 joinrace \
 	ex17 ex18 tst-cancel tst-context bug-sleep \
 	tst-cancel1 tst-cancel2 tst-cancel3 tst-cancel4 tst-cancel5 \
 	tst-cancel6 tst-cancel7 tst-cancel8 tst-popen tst-popen2 tst-attr1 \
-	tst-stack1 tst-align tst-tsd1 tst-sighandler1 tst-sighandler2
+	tst-stack1 tst-align tst-tsd1
 test-srcs = tst-signal
 # These tests are linked with libc before libpthread
 tests-reverse += tst-cancel5
@@ -314,7 +315,8 @@ endif
 
 ifeq (yes,$(build-shared))
 $(objpfx)tst-_res1mod2.so: $(objpfx)tst-_res1mod1.so
-$(objpfx)tst-_res1: $(objpfx)tst-_res1mod2.so $(shared-thread-library)
+$(objpfx)tst-_res1: $(objpfx)tst-_res1mod1.so $(objpfx)tst-_res1mod2.so \
+		    $(shared-thread-library)
 
 $(objpfx)tst-tls1: $(objpfx)tst-tls1mod.so $(shared-thread-library)
 

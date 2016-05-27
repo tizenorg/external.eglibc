@@ -154,7 +154,7 @@ ENTRY(__ieee754_powl)
 	fucompp			// 1.0 : x : y
 	fnstsw
 	fxch			// x : 1.0 : y
-	test	$4500,%eax
+	test	$0x4500,%eax
 	jz	7f
 	fsub	%st(1)		// x-1 : 1.0 : y
 	fyl2xp1			// log2(x) : y

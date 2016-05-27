@@ -91,6 +91,10 @@ print_entry (const char *lib, int flag, unsigned int osversion,
       break;
     case FLAG_MIPS64_LIBN64:
       fputs (",64bit", stdout);
+      break;
+    case FLAG_ARM_LIBHF:
+      fputs (",hard-float", stdout);
+      break;
     case 0:
       break;
     default:
@@ -426,6 +430,7 @@ save_cache (const char *cache_name)
     }
 
   if (write (fd, strings, total_strlen) != (ssize_t) total_strlen
+      || fsync (fd)
       || close (fd))
     error (EXIT_FAILURE, errno, _("Writing of cache data failed"));
 

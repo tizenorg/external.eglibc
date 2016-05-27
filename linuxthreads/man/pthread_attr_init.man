@@ -45,27 +45,27 @@ int pthread_attr_getscope(const pthread_attr_t *attr, int *scope);
 .SH DESCRIPTION
 
 Setting attributes for threads is achieved by filling a
-thread attribute object |attr| of type !pthread_attr_t!, then passing it as
-second argument to !pthread_create!(3). Passing !NULL! is equivalent to
+thread attribute object \fIattr\fP of type \fBpthread_attr_t\fP, then passing it as
+second argument to \fBpthread_create\fP(3). Passing \fBNULL\fP is equivalent to
 passing a thread attribute object with all attributes set to their
 default values.
 
-!pthread_attr_init! initializes the thread attribute object |attr| and
+\fBpthread_attr_init\fP initializes the thread attribute object \fIattr\fP and
 fills it with default values for the attributes. (The default values
 are listed below for each attribute.)
 
-Each attribute |attrname| (see below for a list of all attributes) can
-be individually set using the function !pthread_attr_set!|attrname|
-and retrieved using the function !pthread_attr_get!|attrname|.
+Each attribute \fIattrname\fP (see below for a list of all attributes) can
+be individually set using the function \fBpthread_attr_set\fP\fIattrname\fP
+and retrieved using the function \fBpthread_attr_get\fP\fIattrname\fP.
 
-!pthread_attr_destroy! destroys a thread attribute object, which
-must not be reused until it is reinitialized. !pthread_attr_destroy!
+\fBpthread_attr_destroy\fP destroys a thread attribute object, which
+must not be reused until it is reinitialized. \fBpthread_attr_destroy\fP
 does nothing in the LinuxThreads implementation. 
 
 Attribute objects are consulted only when creating a new thread. The
 same attribute object can be used for creating several
 threads. Modifying an attribute object after a call to
-!pthread_create! does not change the attributes of the thread
+\fBpthread_create\fP does not change the attributes of the thread
 previously created.
 
 The following thread attributes are supported:
@@ -73,149 +73,149 @@ The following thread attributes are supported:
 .SS detachstate
 
 Control whether the thread is created in the joinable state (value
-!PTHREAD_CREATE_JOINABLE!) or in the detached state
-(!PTHREAD_CREATE_DETACHED!). 
+\fBPTHREAD_CREATE_JOINABLE\fP) or in the detached state
+(\fBPTHREAD_CREATE_DETACHED\fP). 
 
-Default value: !PTHREAD_CREATE_JOINABLE!.
+Default value: \fBPTHREAD_CREATE_JOINABLE\fP.
 
 In the joinable state, another thread can synchronize on the thread
-termination and recover its termination code using !pthread_join!(3),
+termination and recover its termination code using \fBpthread_join\fP(3),
 but some of the thread resources are kept allocated after the thread
 terminates, and reclaimed only when another thread performs
-!pthread_join!(3) on that thread.
+\fBpthread_join\fP(3) on that thread.
 
 In the detached state, the thread resources are immediately freed when
-it terminates, but !pthread_join!(3) cannot be used to synchronize on
+it terminates, but \fBpthread_join\fP(3) cannot be used to synchronize on
 the thread termination.
 
 A thread created in the joinable state can later be put in the
-detached thread using !pthread_detach!(3).
+detached state using \fBpthread_detach\fP(3).
 
 .SS schedpolicy
 
 Select the scheduling policy for the thread: one of
-!SCHED_OTHER! (regular, non-realtime scheduling),
-!SCHED_RR! (realtime, round-robin) or
-!SCHED_FIFO! (realtime, first-in first-out). See
-!sched_setpolicy!(2) for more information on scheduling policies.
+\fBSCHED_OTHER\fP (regular, non-realtime scheduling),
+\fBSCHED_RR\fP (realtime, round-robin) or
+\fBSCHED_FIFO\fP (realtime, first-in first-out). See
+\fBsched_setpolicy\fP(2) for more information on scheduling policies.
 
-Default value: !SCHED_OTHER!.
+Default value: \fBSCHED_OTHER\fP.
 
-The realtime scheduling policies !SCHED_RR! and !SCHED_FIFO! are
+The realtime scheduling policies \fBSCHED_RR\fP and \fBSCHED_FIFO\fP are
 available only to processes with superuser privileges.
 
 The scheduling policy of a thread can be changed after creation with
-!pthread_setschedparam!(3).
+\fBpthread_setschedparam\fP(3).
 
 .SS schedparam
 
 Contain the scheduling parameters (essentially, the scheduling
-priority) for the thread. See !sched_setparam!(2) for more information
+priority) for the thread. See \fBsched_setparam\fP(2) for more information
 on scheduling parameters. 
 
 Default value: priority is 0.
 
-This attribute is not significant if the scheduling policy is !SCHED_OTHER!;
-it only matters for the realtime policies !SCHED_RR! and !SCHED_FIFO!.
+This attribute is not significant if the scheduling policy is \fBSCHED_OTHER\fP;
+it only matters for the realtime policies \fBSCHED_RR\fP and \fBSCHED_FIFO\fP.
 
 The scheduling priority of a thread can be changed after creation with
-!pthread_setschedparam!(3).
+\fBpthread_setschedparam\fP(3).
 
 .SS inheritsched
 
 Indicate whether the scheduling policy and scheduling parameters for
 the newly created thread are determined by the values of the
-|schedpolicy| and |schedparam| attributes (value
-!PTHREAD_EXPLICIT_SCHED!) or are inherited from the parent thread
-(value !PTHREAD_INHERIT_SCHED!).
+\fIschedpolicy\fP and \fIschedparam\fP attributes (value
+\fBPTHREAD_EXPLICIT_SCHED\fP) or are inherited from the parent thread
+(value \fBPTHREAD_INHERIT_SCHED\fP).
 
-Default value: !PTHREAD_EXPLICIT_SCHED!.
+Default value: \fBPTHREAD_EXPLICIT_SCHED\fP.
 
 .SS scope
 
 Define the scheduling contention scope for the created thread.  The
 only value supported in the LinuxThreads implementation is
-!PTHREAD_SCOPE_SYSTEM!, meaning that the threads contend for CPU time
+\fBPTHREAD_SCOPE_SYSTEM\fP, meaning that the threads contend for CPU time
 with all processes running on the machine. In particular, thread
 priorities are interpreted relative to the priorities of all other
 processes on the machine. The other value specified by the standard,
-!PTHREAD_SCOPE_PROCESS!, means that scheduling contention occurs only
+\fBPTHREAD_SCOPE_PROCESS\fP, means that scheduling contention occurs only
 between the threads of the running process: thread priorities are
 interpreted relative to the priorities of the other threads of the
 process, regardless of the priorities of other processes.
-!PTHREAD_SCOPE_PROCESS! is not supported in LinuxThreads.
+\fBPTHREAD_SCOPE_PROCESS\fP is not supported in LinuxThreads.
 
-Default value: !PTHREAD_SCOPE_SYSTEM!.
+Default value: \fBPTHREAD_SCOPE_SYSTEM\fP.
 
 .SH "RETURN VALUE"
 
 All functions return 0 on success and a non-zero error code on error.
-On success, the !pthread_attr_get!|attrname| functions also store the
-current value of the attribute |attrname| in the location pointed to
+On success, the \fBpthread_attr_get\fP\fIattrname\fP functions also store the
+current value of the attribute \fIattrname\fP in the location pointed to
 by their second argument.
 
 .SH ERRORS
 
-The !pthread_attr_setdetachstate! function returns the following error
+The \fBpthread_attr_setdetachstate\fP function returns the following error
 codes on error:
 .RS
 .TP
-!EINVAL!
-the specified |detachstate| is not one of !PTHREAD_CREATE_JOINABLE! or
-!PTHREAD_CREATE_DETACHED!.
+\fBEINVAL\fP
+the specified \fIdetachstate\fP is not one of \fBPTHREAD_CREATE_JOINABLE\fP or
+\fBPTHREAD_CREATE_DETACHED\fP.
 .RE
 
-The !pthread_attr_setschedparam! function returns the following error
+The \fBpthread_attr_setschedparam\fP function returns the following error
 codes on error:
 .RS
 .TP
-!EINVAL!
-the priority specified in |param| is outside the range of allowed
-priorities for the scheduling policy currently in |attr|
-(1 to 99 for !SCHED_FIFO! and !SCHED_RR!; 0 for !SCHED_OTHER!).
+\fBEINVAL\fP
+the priority specified in \fIparam\fP is outside the range of allowed
+priorities for the scheduling policy currently in \fIattr\fP
+(1 to 99 for \fBSCHED_FIFO\fP and \fBSCHED_RR\fP; 0 for \fBSCHED_OTHER\fP).
 .RE
 
-The !pthread_attr_setschedpolicy! function returns the following error
+The \fBpthread_attr_setschedpolicy\fP function returns the following error
 codes on error:
 .RS
 .TP
-!EINVAL!
-the specified |policy| is not one of !SCHED_OTHER!, !SCHED_FIFO!, or
-!SCHED_RR!.
+\fBEINVAL\fP
+the specified \fIpolicy\fP is not one of \fBSCHED_OTHER\fP, \fBSCHED_FIFO\fP, or
+\fBSCHED_RR\fP.
 
 .TP
-!ENOTSUP!
-|policy| is !SCHED_FIFO! or !SCHED_RR!, and the effective user of the
+\fBENOTSUP\fP
+\fIpolicy\fP is \fBSCHED_FIFO\fP or \fBSCHED_RR\fP, and the effective user of the
 calling process is not super-user.
 .RE
 
-The !pthread_attr_setinheritsched! function returns the following error
+The \fBpthread_attr_setinheritsched\fP function returns the following error
 codes on error:
 .RS
 .TP
-!EINVAL!
-the specified |inherit| is not one of !PTHREAD_INHERIT_SCHED! or
-!PTHREAD_EXPLICIT_SCHED!.
+\fBEINVAL\fP
+the specified \fIinherit\fP is not one of \fBPTHREAD_INHERIT_SCHED\fP or
+\fBPTHREAD_EXPLICIT_SCHED\fP.
 .RE
 
-The !pthread_attr_setscope! function returns the following error
+The \fBpthread_attr_setscope\fP function returns the following error
 codes on error:
 .RS
 .TP
-!EINVAL!
-the specified |scope| is not one of !PTHREAD_SCOPE_SYSTEM! or
-!PTHREAD_SCOPE_PROCESS!.
+\fBEINVAL\fP
+the specified \fIscope\fP is not one of \fBPTHREAD_SCOPE_SYSTEM\fP or
+\fBPTHREAD_SCOPE_PROCESS\fP.
 
 .TP
-!ENOTSUP!
-the specified |scope| is !PTHREAD_SCOPE_PROCESS! (not supported).
+\fBENOTSUP\fP
+the specified \fIscope\fP is \fBPTHREAD_SCOPE_PROCESS\fP (not supported).
 .RE
 
 .SH AUTHOR
 Xavier Leroy <Xavier.Leroy@inria.fr>
 
 .SH "SEE ALSO"
-!pthread_create!(3),
-!pthread_join!(3),
-!pthread_detach!(3),
-!pthread_setschedparam!(3).
+\fBpthread_create\fP(3),
+\fBpthread_join\fP(3),
+\fBpthread_detach\fP(3),
+\fBpthread_setschedparam\fP(3).

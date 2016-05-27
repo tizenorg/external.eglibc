@@ -1,6 +1,5 @@
 /* Operating system support for run-time dynamic linker.  Hurd version.
-   Copyright (C) 1995,1996,1997,1998,1999,2000,2001,2002,2003,2004,2010
-	Free Software Foundation, Inc.
+   Copyright (C) 1995-2012 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -17,6 +16,10 @@
    License along with the GNU C Library; if not, write to the Free
    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307 USA.  */
+
+/* In the static library, this is all handled by dl-support.c
+   or by the vanilla definitions in the rest of the C library.  */
+#ifdef SHARED
 
 #include <hurd.h>
 #include <link.h>
@@ -59,6 +62,8 @@ void *__libc_stack_end;
 hp_timing_t _dl_cpuclock_offset;
 #endif
 
+/* TODO: this is never properly initialized in here.  */
+void *_dl_random attribute_relro = NULL;
 
 struct hurd_startup_data *_dl_hurd_data;
 
@@ -102,12 +107,26 @@ static void fmh(void) {
 	max=a; break;}
       fmha=a+=fmhs;}
     if (err) assert(err==KERN_NO_SPACE);
-    if (!fmha)fmhs=0;else{
-    fmhs=max-fmha;
-    err = __vm_map (__mach_task_self (),
-		    &fmha, fmhs, 0, 0, MACH_PORT_NULL, 0, 1,
-		    VM_PROT_NONE, VM_PROT_NONE, VM_INHERIT_COPY);
-    assert_perror(err);}
+    if (!fmha)
+      fmhs=0;
+    else
+      while (1) {
+	fmhs=max-fmha;
+	err = __vm_map (__mach_task_self (),
+			&fmha, fmhs, 0, 0, MACH_PORT_NULL, 0, 1,
+			VM_PROT_NONE, VM_PROT_NONE, VM_INHERIT_COPY);
+	if (!err)
+	  break;
+	if (err != KERN_INVALID_ADDRESS && err != KERN_NO_SPACE)
+	  assert_perror(err);
+	vm_address_t new_max = (max - 1) & 0xf0000000U;
+	if (new_max >= max) {
+	  fmhs = 0;
+	  fmha = 0;
+	  break;
+	}
+	max = new_max;
+      }
   }
 /* XXX loser kludge for vm_map kernel bug */
 #endif
@@ -316,7 +335,7 @@ open_file (const char *file_name, int flags,
       return MACH_PORT_NULL;
     }
 
-  assert (!(flags & ~O_READ));
+  assert (!(flags & ~(O_READ | O_CLOEXEC)));
 
   startdir = _dl_hurd_data->portarray[file_name[0] == '/' ?
 				      INIT_PORT_CRDIR : INIT_PORT_CWDIR];
@@ -669,3 +688,5 @@ _dl_init_first (int argc, ...)
 {
   /* This no-op definition only gets used if libc is not linked in.  */
 }
+
+#endif /* SHARED */

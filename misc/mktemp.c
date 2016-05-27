@@ -33,4 +33,4 @@ mktemp (template)
   return template;
 }
 
-link_warning (mktemp, "the use of `mktemp' is dangerous, better use `mkstemp'")
+link_warning (mktemp, "the use of `mktemp' is dangerous, better use `mkstemp' or `mkdtemp'")

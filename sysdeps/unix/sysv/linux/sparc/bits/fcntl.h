@@ -40,6 +40,7 @@
 #define O_TRUNC		0x0400	/* not fcntl */
 #define O_EXCL		0x0800	/* not fcntl */
 #define O_SYNC		0x802000
+#define O_FSYNC		O_SYNC
 #define O_NONBLOCK	0x4000
 #define O_NDELAY	(0x0004 | O_NONBLOCK)
 #define O_NOCTTY	0x8000	/* not fcntl */
@@ -243,6 +244,21 @@ struct f_owner_ex
 					   we splice from/to).  */
 # define SPLICE_F_MORE		4	/* Expect more data.  */
 # define SPLICE_F_GIFT		8	/* Pages passed in are a gift.  */
+#endif
+
+/* Values for `*at' functions.  */
+#ifdef __USE_ATFILE
+# define AT_FDCWD		-100	/* Special value used to indicate
+					   the *at functions should use the
+					   current working directory. */
+# define AT_SYMLINK_NOFOLLOW	0x100	/* Do not follow symbolic links.  */
+# define AT_REMOVEDIR		0x200	/* Remove directory instead of
+					   unlinking file.  */
+# define AT_SYMLINK_FOLLOW	0x400	/* Follow symbolic links.  */
+# define AT_NO_AUTOMOUNT	0x800	/* Suppress terminal automount
+					   traversal.  */
+# define AT_EACCESS		0x200	/* Test access permitted for
+					   effective IDs, not real IDs.  */
 #endif
 
 __BEGIN_DECLS

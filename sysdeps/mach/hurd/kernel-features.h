@@ -21,11 +21,5 @@
    Almost none of these are used outside of sysdeps/unix/sysv/linux code.
    But those referring to POSIX-level features like O_* flags can be.  */
 
-#include <fcntl.h>
-
-/* If a system defines the O_CLOEXEC constant but it is sometimes ignored,
-   it must override this file to define __ASSUME_O_CLOEXEC conditionally
-   (or not at all) to indicate when O_CLOEXEC actually works.  */
-#ifdef O_CLOEXEC
-# define __ASSUME_O_CLOEXEC	1
-#endif
+#define __ASSUME_O_CLOEXEC	1
+#define __ASSUME_DUP3		1

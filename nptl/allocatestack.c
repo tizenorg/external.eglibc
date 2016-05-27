@@ -26,7 +26,9 @@
 #include <sys/mman.h>
 #include <sys/param.h>
 #include <dl-sysdep.h>
+#include <dl-tls.h>
 #include <tls.h>
+#include <list.h>
 #include <lowlevellock.h>
 #include <kernel-features.h>
 
@@ -241,6 +243,10 @@ get_cached_stack (size_t *sizep, void **memp)
 
   /* Clear the DTV.  */
   dtv_t *dtv = GET_DTV (TLS_TPADJ (result));
+  for (size_t cnt = 0; cnt < dtv[-1].counter; ++cnt)
+    if (! dtv[1 + cnt].pointer.is_static
+	&& dtv[1 + cnt].pointer.val != TLS_DTV_UNALLOCATED)
+      free (dtv[1 + cnt].pointer.val);
   memset (dtv, '\0', (dtv[-1].counter + 1) * sizeof (dtv_t));
 
   /* Re-initialize the TLS.  */
@@ -356,6 +362,15 @@ allocate_stack (const struct pthread_attr *attr, struct pthread **pdp,
   if (__builtin_expect (attr->flags & ATTR_FLAG_STACKADDR, 0))
     {
       uintptr_t adj;
+#if _STACK_GROWS_DOWN
+      char * stackaddr = (char *) attr->stackaddr;
+#else
+      /* Assume the same layout as the _STACK_GROWS_DOWN case, 
+	 with struct pthread at the top of the stack block. 
+	 Later we adjust the guard location and stack address 
+	 to match the _STACK_GROWS_UP case.  */
+      char * stackaddr = (char *) attr->stackaddr + attr->stacksize;
+#endif
 
       /* If the user also specified the size of the stack make sure it
 	 is large enough.  */
@@ -365,11 +380,11 @@ allocate_stack (const struct pthread_attr *attr, struct pthread **pdp,
 
       /* Adjust stack size for alignment of the TLS block.  */
 #if TLS_TCB_AT_TP
-      adj = ((uintptr_t) attr->stackaddr - TLS_TCB_SIZE)
+      adj = ((uintptr_t) stackaddr - TLS_TCB_SIZE)
 	    & __static_tls_align_m1;
       assert (size > adj + TLS_TCB_SIZE);
 #elif TLS_DTV_AT_TP
-      adj = ((uintptr_t) attr->stackaddr - __static_tls_size)
+      adj = ((uintptr_t) stackaddr - __static_tls_size)
 	    & __static_tls_align_m1;
       assert (size > adj);
 #endif
@@ -379,10 +394,10 @@ allocate_stack (const struct pthread_attr *attr, struct pthread **pdp,
 	 the stack.  It is the user's responsibility to do this if it
 	 is wanted.  */
 #if TLS_TCB_AT_TP
-      pd = (struct pthread *) ((uintptr_t) attr->stackaddr
+      pd = (struct pthread *) ((uintptr_t) stackaddr
 			       - TLS_TCB_SIZE - adj);
 #elif TLS_DTV_AT_TP
-      pd = (struct pthread *) (((uintptr_t) attr->stackaddr
+      pd = (struct pthread *) (((uintptr_t) stackaddr
 				- __static_tls_size - adj)
 			       - TLS_PRE_TCB_SIZE);
 #endif
@@ -394,7 +409,7 @@ allocate_stack (const struct pthread_attr *attr, struct pthread **pdp,
       pd->specific[0] = pd->specific_1stblock;
 
       /* Remember the stack-related values.  */
-      pd->stackblock = (char *) attr->stackaddr - size;
+      pd->stackblock = (char *) stackaddr - size;
       pd->stackblock_size = size;
 
       /* This is a user-provided stack.  It will not be queued in the
@@ -625,7 +640,7 @@ allocate_stack (const struct pthread_attr *attr, struct pthread **pdp,
 	  char *guard = mem + (((size - guardsize) / 2) & ~pagesize_m1);
 #elif _STACK_GROWS_DOWN
 	  char *guard = mem;
-# elif _STACK_GROWS_UP
+#elif _STACK_GROWS_UP
 	  char *guard = (char *) (((uintptr_t) pd - guardsize) & ~pagesize_m1);
 #endif
 	  if (mprotect (guard, guardsize, PROT_NONE) != 0)
@@ -678,9 +693,13 @@ allocate_stack (const struct pthread_attr *attr, struct pthread **pdp,
 			prot) != 0)
 	    goto mprot_error;
 #elif _STACK_GROWS_UP
-	  if (mprotect ((char *) pd - pd->guardsize,
-			pd->guardsize - guardsize, prot) != 0)
-	    goto mprot_error;
+	  char *new_guard = (char *) (((uintptr_t) pd - guardsize) & ~pagesize_m1);
+	  char *old_guard = (char *) (((uintptr_t) pd - pd->guardsize) & ~pagesize_m1);
+	  /* The guard size difference might be > 0, but once rounded
+	     to the nearest page the size difference might be zero.  */
+	  if (old_guard - new_guard > 0)
+	    if (mprotect (old_guard, new_guard - old_guard, prot) != 0)
+	      goto mprot_error;
 #endif
 
 	  pd->guardsize = guardsize;
@@ -723,8 +742,10 @@ allocate_stack (const struct pthread_attr *attr, struct pthread **pdp,
 #elif _STACK_GROWS_DOWN
   *stack = stacktop;
 #elif _STACK_GROWS_UP
+  /* We don't use stacktop. In _STACK_GROWS_UP the start
+     of the stack is simply stackblock (lowest address of
+     the stored block of memory for the stack).  */
   *stack = pd->stackblock;
-  assert (*stack > 0);
 #endif
 
   return 0;

@@ -40,31 +40,31 @@ the race condition where a thread prepares to wait on a condition
 variable and another thread signals the condition just before the
 first thread actually waits on it.
 
-!pthread_cond_init! initializes the condition variable |cond|, using the
-condition attributes specified in |cond_attr|, or default attributes
-if |cond_attr| is !NULL!. The LinuxThreads implementation supports no
-attributes for conditions, hence the |cond_attr| parameter is actually
+\fBpthread_cond_init\fP initializes the condition variable \fIcond\fP, using the
+condition attributes specified in \fIcond_attr\fP, or default attributes
+if \fIcond_attr\fP is \fBNULL\fP. The LinuxThreads implementation supports no
+attributes for conditions, hence the \fIcond_attr\fP parameter is actually
 ignored.
 
-Variables of type !pthread_cond_t! can also be initialized
-statically, using the constant !PTHREAD_COND_INITIALIZER!.
+Variables of type \fBpthread_cond_t\fP can also be initialized
+statically, using the constant \fBPTHREAD_COND_INITIALIZER\fP.
 
-!pthread_cond_signal! restarts one of the threads that are waiting on
-the condition variable |cond|. If no threads are waiting on |cond|,
-nothing happens. If several threads are waiting on |cond|, exactly one
+\fBpthread_cond_signal\fP restarts one of the threads that are waiting on
+the condition variable \fIcond\fP. If no threads are waiting on \fIcond\fP,
+nothing happens. If several threads are waiting on \fIcond\fP, exactly one
 is restarted, but it is not specified which.
 
-!pthread_cond_broadcast! restarts all the threads that are waiting on
-the condition variable |cond|. Nothing happens if no threads are
-waiting on |cond|.
+\fBpthread_cond_broadcast\fP restarts all the threads that are waiting on
+the condition variable \fIcond\fP. Nothing happens if no threads are
+waiting on \fIcond\fP.
 
-!pthread_cond_wait! atomically unlocks the |mutex| (as per
-!pthread_unlock_mutex!) and waits for the condition variable |cond| to
+\fBpthread_cond_wait\fP atomically unlocks the \fImutex\fP (as per
+\fBpthread_unlock_mutex\fP) and waits for the condition variable \fIcond\fP to
 be signaled. The thread execution is suspended and does not consume
-any CPU time until the condition variable is signaled. The |mutex|
+any CPU time until the condition variable is signaled. The \fImutex\fP
 must be locked by the calling thread on entrance to
-!pthread_cond_wait!. Before returning to the calling thread,
-!pthread_cond_wait! re-acquires |mutex| (as per !pthread_lock_mutex!).
+\fBpthread_cond_wait\fP. Before returning to the calling thread,
+\fBpthread_cond_wait\fP re-acquires \fImutex\fP (as per \fBpthread_lock_mutex\fP).
 
 Unlocking the mutex and suspending on the condition variable is done
 atomically. Thus, if all threads always acquire the mutex before
@@ -72,37 +72,37 @@ signaling the condition, this guarantees that the condition cannot be
 signaled (and thus ignored) between the time a thread locks the mutex
 and the time it waits on the condition variable.
 
-!pthread_cond_timedwait! atomically unlocks |mutex| and waits on
-|cond|, as !pthread_cond_wait! does, but it also bounds the duration
-of the wait. If |cond| has not been signaled within the amount of time
-specified by |abstime|, the mutex |mutex| is re-acquired and
-!pthread_cond_timedwait! returns the error !ETIMEDOUT!.
-The |abstime| parameter specifies an absolute time, with the same
-origin as !time!(2) and !gettimeofday!(2): an |abstime| of 0
+\fBpthread_cond_timedwait\fP atomically unlocks \fImutex\fP and waits on
+\fIcond\fP, as \fBpthread_cond_wait\fP does, but it also bounds the duration
+of the wait. If \fIcond\fP has not been signaled within the amount of time
+specified by \fIabstime\fP, the mutex \fImutex\fP is re-acquired and
+\fBpthread_cond_timedwait\fP returns the error \fBETIMEDOUT\fP.
+The \fIabstime\fP parameter specifies an absolute time, with the same
+origin as \fBtime\fP(2) and \fBgettimeofday\fP(2): an \fIabstime\fP of 0
 corresponds to 00:00:00 GMT, January 1, 1970.
 
-!pthread_cond_destroy! destroys a condition variable, freeing the
+\fBpthread_cond_destroy\fP destroys a condition variable, freeing the
 resources it might hold. No threads must be waiting on the condition
-variable on entrance to !pthread_cond_destroy!. In the LinuxThreads
+variable on entrance to \fBpthread_cond_destroy\fP. In the LinuxThreads
 implementation, no resources are associated with condition variables,
-thus !pthread_cond_destroy! actually does nothing except checking that
+thus \fBpthread_cond_destroy\fP actually does nothing except checking that
 the condition has no waiting threads.
 
 .SH CANCELLATION
 
-!pthread_cond_wait! and !pthread_cond_timedwait! are cancellation
+\fBpthread_cond_wait\fP and \fBpthread_cond_timedwait\fP are cancellation
 points. If a thread is cancelled while suspended in one of these
 functions, the thread immediately resumes execution, then locks again
-the |mutex| argument to !pthread_cond_wait! and
-!pthread_cond_timedwait!, and finally executes the cancellation.
-Consequently, cleanup handlers are assured that |mutex| is locked when
+the \fImutex\fP argument to \fBpthread_cond_wait\fP and
+\fBpthread_cond_timedwait\fP, and finally executes the cancellation.
+Consequently, cleanup handlers are assured that \fImutex\fP is locked when
 they are called.
 
 .SH "ASYNC-SIGNAL SAFETY"
 
 The condition functions are not async-signal safe, and should not be
 called from a signal handler. In particular, calling
-!pthread_cond_signal! or !pthread_cond_broadcast! from a signal
+\fBpthread_cond_signal\fP or \fBpthread_cond_broadcast\fP from a signal
 handler may deadlock the calling thread.
 
 .SH "RETURN VALUE"
@@ -112,45 +112,45 @@ error code on error.
 
 .SH ERRORS
 
-!pthread_cond_init!, !pthread_cond_signal!, !pthread_cond_broadcast!,
-and !pthread_cond_wait! never return an error code.
+\fBpthread_cond_init\fP, \fBpthread_cond_signal\fP, \fBpthread_cond_broadcast\fP,
+and \fBpthread_cond_wait\fP never return an error code.
 
-The !pthread_cond_timedwait! function returns the following error codes
+The \fBpthread_cond_timedwait\fP function returns the following error codes
 on error:
 .RS
 .TP
-!ETIMEDOUT!
+\fBETIMEDOUT\fP
 the condition variable was not signaled until the timeout specified by
-|abstime|
+\fIabstime\fP
 
 .TP
-!EINTR!
-!pthread_cond_timedwait! was interrupted by a signal
+\fBEINTR\fP
+\fBpthread_cond_timedwait\fP was interrupted by a signal
 .RE
 
-The !pthread_cond_destroy! function returns the following error code
+The \fBpthread_cond_destroy\fP function returns the following error code
 on error:
 .RS
 .TP
-!EBUSY!
-some threads are currently waiting on |cond|.
+\fBEBUSY\fP
+some threads are currently waiting on \fIcond\fP.
 .RE
 
 .SH AUTHOR
 Xavier Leroy <Xavier.Leroy@inria.fr>
 
 .SH "SEE ALSO"
-!pthread_condattr_init!(3),
-!pthread_mutex_lock!(3),
-!pthread_mutex_unlock!(3),
-!gettimeofday!(2),
-!nanosleep!(2).
+\fBpthread_condattr_init\fP(3),
+\fBpthread_mutex_lock\fP(3),
+\fBpthread_mutex_unlock\fP(3),
+\fBgettimeofday\fP(2),
+\fBnanosleep\fP(2).
 
 .SH EXAMPLE
 
-Consider two shared variables |x| and |y|, protected by the mutex |mut|,
-and a condition variable |cond| that is to be signaled whenever |x|
-becomes greater than |y|.
+Consider two shared variables \fIx\fP and \fIy\fP, protected by the mutex \fImut\fP,
+and a condition variable \fIcond\fP that is to be signaled whenever \fIx\fP
+becomes greater than \fIy\fP.
 
 .RS
 .ft 3
@@ -164,7 +164,7 @@ pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 .RE
 .fi
 
-Waiting until |x| is greater than |y| is performed as follows:
+Waiting until \fIx\fP is greater than \fIy\fP is performed as follows:
 
 .RS
 .ft 3
@@ -181,8 +181,8 @@ pthread_mutex_unlock(&mut);
 .RE
 .fi
 
-Modifications on |x| and |y| that may cause |x| to become greater than
-|y| should signal the condition if needed:
+Modifications on \fIx\fP and \fIy\fP that may cause \fIx\fP to become greater than
+\fIy\fP should signal the condition if needed:
 
 .RS
 .ft 3
@@ -199,11 +199,11 @@ pthread_mutex_unlock(&mut);
 
 If it can be proved that at most one waiting thread needs to be waken
 up (for instance, if there are only two threads communicating through
-|x| and |y|), !pthread_cond_signal! can be used as a slightly more
-efficient alternative to !pthread_cond_broadcast!. In doubt, use
-!pthread_cond_broadcast!.
+\fIx\fP and \fIy\fP), \fBpthread_cond_signal\fP can be used as a slightly more
+efficient alternative to \fBpthread_cond_broadcast\fP. In doubt, use
+\fBpthread_cond_broadcast\fP.
 
-To wait for |x| to becomes greater than |y| with a timeout of 5
+To wait for \fIx\fP to becomes greater than \fIy\fP with a timeout of 5
 seconds, do:
 
 .RS

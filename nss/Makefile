@@ -47,7 +47,7 @@ routines-$(OPTION_EGLIBC_INET) += digits_dots
 others                  := getent
 install-bin             := getent
 
-tests			= tst-nss-test1
+tests			= tst-nss-test1 test-digits-dots
 tests-$(OPTION_EGLIBC_INET) += test-netdb
 xtests-$(OPTION_EGLIBC_INET) += bug-erange
 

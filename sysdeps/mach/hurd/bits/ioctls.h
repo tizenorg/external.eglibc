@@ -1,4 +1,4 @@
-/* Copyright (C) 1992,93,96,97,98,99,2001,2007 Free Software Foundation, Inc.
+/* Copyright (C) 1992-2012 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -149,15 +149,33 @@ enum __ioctl_datum { IOC_8, IOC_16, IOC_32, IOC_64 };
 #define	_IOT_SIMPLE(type)	_IOT (_IOTS (type), 1, 0, 0, 0, 0)
 
 /* Basic C types.  */
-#define	_IOT__IOTBASE_int	_IOT_SIMPLE (int)
 #define	_IOT__IOTBASE_char	_IOT_SIMPLE (char)
 #define	_IOT__IOTBASE_short	_IOT_SIMPLE (short)
+#define	_IOT__IOTBASE_int	_IOT_SIMPLE (int)
+#define	_IOT__IOTBASE_long	_IOT_SIMPLE (long)
+#define	_IOT_char		_IOT_SIMPLE (char)
+#define	_IOT_short		_IOT_SIMPLE (short)
+#define	_IOT_int		_IOT_SIMPLE (int)
+#define	_IOT_long		_IOT_SIMPLE (long)
+
+#define	_IOT__IOTBASE_int8_t	_IOT_SIMPLE (int8_t)
+#define	_IOT__IOTBASE_uint8_t	_IOT_SIMPLE (uint8_t)
+#define	_IOT__IOTBASE_int16_t	_IOT_SIMPLE (int16_t)
+#define	_IOT__IOTBASE_uint16_t	_IOT_SIMPLE (uint16_t)
+#define	_IOT__IOTBASE_int32_t	_IOT_SIMPLE (int32_t)
+#define	_IOT__IOTBASE_uint32_t	_IOT_SIMPLE (uint32_t)
+#define	_IOT__IOTBASE_int64_t	_IOT_SIMPLE (int64_t)
+#define	_IOT__IOTBASE_uint64_t	_IOT_SIMPLE (uint64_t)
+
+#define	_IOT__IOTBASE_size_t	_IOT_SIMPLE (size_t)
+#define	_IOT__IOTBASE_ssize_t	_IOT_SIMPLE (ssize_t)
 
 
 /* Standard flavors of ioctls.
    _IOT_foobar is defined either in this file,
    or where struct foobar is defined.  */
 #define	_IO(g, n)	_IOC (IOC_VOID, (g), (n), 0)
+#define	_IOIW(g, n, t)	_IOC (IOC_VOID, (g), (n), _IOC_ENCODE_TYPE (t))
 #define	_IOR(g, n, t)	_IOC (IOC_OUT, (g), (n), _IOC_ENCODE_TYPE (t))
 #define	_IOW(g, n, t)	_IOC (IOC_IN, (g), (n), _IOC_ENCODE_TYPE (t))
 #define	_IOWR(g, n, t)	_IOC (IOC_INOUT, (g), (n), _IOC_ENCODE_TYPE (t))
@@ -172,6 +190,10 @@ enum __ioctl_datum { IOC_8, IOC_16, IOC_32, IOC_64 };
 #define _IOTBASE_struct
 #define _IOC_ENCODE_TYPE_1(typespec)	_IOC_ENCODE_TYPE_2(typespec)
 #define _IOC_ENCODE_TYPE_2(typespec)	_IOT_##typespec
+
+/* Also, ignore signedness.  */
+#define	_IOTBASE_unsigned
+#define	_IOTBASE_signed
 
 
 /* ioctls verbatim from 4.4 <sys/ioctl.h>.  */
@@ -260,8 +282,10 @@ enum __ioctl_datum { IOC_8, IOC_16, IOC_32, IOC_64 };
 #define	SIOCSPGRP	_IOW('s',  8, int)		/* set process group */
 #define	SIOCGPGRP	_IOR('s',  9, int)		/* get process group */
 
+#if 0
 #define	SIOCADDRT	_IOW('r', 10, struct ortentry)	/* add route */
 #define	SIOCDELRT	_IOW('r', 11, struct ortentry)	/* delete route */
+#endif
 
 #define	SIOCSIFADDR	_IOW('i', 12, struct ifreq)	/* set ifnet address */
 #define	OSIOCGIFADDR	_IOWR('i',13, struct ifreq)	/* get ifnet address */
@@ -283,12 +307,16 @@ enum __ioctl_datum { IOC_8, IOC_16, IOC_32, IOC_64 };
 #define	SIOCGIFMETRIC	_IOWR('i',23, struct ifreq_int)	/* get IF metric */
 #define	SIOCSIFMETRIC	_IOW('i',24, struct ifreq_int)	/* set IF metric */
 #define	SIOCDIFADDR	_IOW('i',25, struct ifreq)	/* delete IF addr */
+#if 0
 #define	SIOCAIFADDR	_IOW('i',26, struct ifaliasreq)	/* add/chg IF alias */
+#endif
 
+#if 0
 #define	SIOCSARP	_IOW('i', 30, struct arpreq)	/* set arp entry */
 #define	OSIOCGARP	_IOWR('i',31, struct arpreq)	/* get arp entry */
 #define	SIOCGARP	_IOWR('i',38, struct arpreq)	/* get arp entry */
 #define	SIOCDARP	_IOW('i', 32, struct arpreq)	/* delete arp entry */
+#endif
 
 #define SIOCGIFMTU	_IOWR('i', 51, struct ifreq_int)/* get IF mtu */
 #define SIOCSIFMTU	_IOW('i', 52, struct ifreq_int)	/* set IF mtu */

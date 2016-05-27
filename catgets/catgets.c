@@ -57,7 +57,7 @@ catopen (const char *cat_name, int flag)
 	  size_t len = strlen (nlspath) + 1 + sizeof NLSPATH;
 	  tmp = malloc (len);
 
-	  if (__builtin_expect (tmp == NULL, 0))
+	  if (__glibc_unlikely (tmp == NULL))
 	    return (nl_catd) -1;
 
 	  __stpcpy (__stpcpy (__stpcpy (tmp, nlspath), ":"), NLSPATH);

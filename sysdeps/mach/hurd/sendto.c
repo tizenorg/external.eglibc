@@ -34,11 +34,11 @@ __sendto (int fd,
 	  const struct sockaddr_un *addr,
 	  socklen_t addr_len)
 {
-  addr_port_t aport;
-  error_t err;
+  addr_port_t aport = MACH_PORT_NULL;
+  error_t err = 0;
   size_t wrote;
 
-  if (addr->sun_family == AF_LOCAL)
+  if (addr != NULL && addr->sun_family == AF_LOCAL)
     {
       /* For the local domain, we must look up the name as a file and talk
 	 to it with the ifsock protocol.  */
@@ -53,13 +53,11 @@ __sendto (int fd,
       if (err)
 	return __hurd_fail (err);
     }
-  else
-    err = EIEIO;
 
   /* Get an address port for the desired destination address.  */
   err = HURD_DPORT_USE (fd,
 			({
-			  if (err)
+			  if (aport == MACH_PORT_NULL && addr != NULL)
 			    err = __socket_create_address (port,
 							   addr->sun_family,
 							   (char *) addr,

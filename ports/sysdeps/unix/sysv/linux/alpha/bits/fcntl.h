@@ -97,6 +97,8 @@
 # define F_SETLEASE	1024	/* Set a lease.	 */
 # define F_GETLEASE	1025	/* Enquire what lease is active.  */
 # define F_NOTIFY	1026	/* Request notfications on a directory.	 */
+# define F_SETPIPE_SZ	1031    /* Set pipe page size array.  */
+# define F_GETPIPE_SZ	1032    /* Set pipe page size array.  */
 #endif
 #ifdef __USE_XOPEN2K8
 # define F_DUPFD_CLOEXEC 1030	/* Duplicate file descriptor with
@@ -223,6 +225,21 @@ struct f_owner_ex
 # define SPLICE_F_GIFT		8	/* Pages passed in are a gift.  */
 #endif
 
+/* Values for `*at' functions.  */
+#ifdef __USE_ATFILE
+# define AT_FDCWD		-100	/* Special value used to indicate
+					   the *at functions should use the
+					   current working directory. */
+# define AT_SYMLINK_NOFOLLOW	0x100	/* Do not follow symbolic links.  */
+# define AT_REMOVEDIR		0x200	/* Remove directory instead of
+					   unlinking file.  */
+# define AT_SYMLINK_FOLLOW	0x400	/* Follow symbolic links.  */
+# define AT_NO_AUTOMOUNT	0x800	/* Suppress terminal automount
+					   traversal.  */
+# define AT_EACCESS		0x200	/* Test access permitted for
+					   effective IDs, not real IDs.  */
+#endif
+
 __BEGIN_DECLS
 
 #ifdef __USE_GNU
@@ -249,6 +266,23 @@ extern ssize_t splice (int __fdin, __off64_t *__offin, int __fdout,
 /* In-kernel implementation of tee for pipe buffers.  */
 extern ssize_t tee (int __fdin, int __fdout, size_t __len,
 		    unsigned int __flags);
+
+/* Reserve storage for the data of the file associated with FD. */
+# ifndef __USE_FILE_OFFSET64
+extern int fallocate (int __fd, int __mode, __off_t __offset, __off_t __len);
+# else
+#  ifdef __REDIRECT
+extern int __REDIRECT (fallocate, (int __fd, int __mode, __off64_t __offset,
+                                   __off64_t __len),
+                       fallocate64);
+#  else
+#   define fallocate fallocate64
+#  endif
+# endif
+# ifdef __USE_LARGEFILE64
+extern int fallocate64 (int __fd, int __mode, __off64_t __offset,
+                        __off64_t __len);
+# endif
 
 #endif
 

@@ -24,6 +24,7 @@ LDFLAGS-c_pic.os += -Wl,--unique=.text*
 
 ifeq ($(subdir),elf)
 CFLAGS-rtld.c += -mdisable-fpregs
+CFLAGS-dl-reloc.c += --param inline-unit-growth=100
 sysdep-dl-routines += dl-symaddr dl-fptr
 sysdep_routines += $(sysdep-dl-routines)
 sysdep-rtld-routines += $(sysdep-dl-routines)

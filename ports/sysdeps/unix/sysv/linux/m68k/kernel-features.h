@@ -27,6 +27,9 @@
 # define __ASSUME_VFORK_SYSCALL		1
 #endif
 
+/* m68k uses socketcall.  */
+#define __ASSUME_SOCKETCALL	1
+
 /* Many syscalls were added in 2.6.10 for m68k.  */
 #if __LINUX_KERNEL_VERSION >= 132618
 # define __ASSUME_TGKILL	1

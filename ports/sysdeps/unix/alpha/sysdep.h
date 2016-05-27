@@ -157,6 +157,8 @@ __LABEL(name)						\
 
 #else /* !ASSEMBLER */
 
+#include <stdint.h>
+
 /* ??? Linux needs to be able to override INLINE_SYSCALL for one
    particular special case.  Make this easy.  */
 
@@ -399,10 +401,10 @@ __LABEL(name)						\
 	_sc_ret = _sc_0, _sc_err = _sc_19;			\
 }
 
+#endif /* ASSEMBLER */
+
 /* Pointer mangling support.  Note that tls access is slow enough that
    we don't deoptimize things by placing the pointer check value there.  */
-
-#include <stdint.h>
 
 #if defined NOT_IN_libc && defined IS_IN_rtld
 # ifdef __ASSEMBLER__
@@ -447,4 +449,3 @@ extern const uintptr_t __pointer_chk_guard attribute_relro;
 # endif
 #endif
 
-#endif /* ASSEMBLER */

@@ -14,66 +14,66 @@ int pthread_getschedparam(pthread_t target_thread, int *policy, struct sched_par
 
 .SH DESCRIPTION
 
-!pthread_setschedparam! sets the scheduling parameters for the thread
-|target_thread| as indicated by |policy| and |param|. |policy| can be
-either !SCHED_OTHER! (regular, non-realtime scheduling), !SCHED_RR!
-(realtime, round-robin) or !SCHED_FIFO! (realtime, first-in
-first-out). |param| specifies the scheduling priority for the two
-realtime policies.  See !sched_setpolicy!(2) for more information on
+\fBpthread_setschedparam\fP sets the scheduling parameters for the thread
+\fItarget_thread\fP as indicated by \fIpolicy\fP and \fIparam\fP. \fIpolicy\fP can be
+either \fBSCHED_OTHER\fP (regular, non-realtime scheduling), \fBSCHED_RR\fP
+(realtime, round-robin) or \fBSCHED_FIFO\fP (realtime, first-in
+first-out). \fIparam\fP specifies the scheduling priority for the two
+realtime policies.  See \fBsched_setpolicy\fP(2) for more information on
 scheduling policies.
 
-The realtime scheduling policies !SCHED_RR! and !SCHED_FIFO! are
+The realtime scheduling policies \fBSCHED_RR\fP and \fBSCHED_FIFO\fP are
 available only to processes with superuser privileges.
 
-!pthread_getschedparam! retrieves the scheduling policy and scheduling
-parameters for the thread |target_thread| and store them in the
-locations pointed to by |policy| and |param|, respectively.
+\fBpthread_getschedparam\fP retrieves the scheduling policy and scheduling
+parameters for the thread \fItarget_thread\fP and store them in the
+locations pointed to by \fIpolicy\fP and \fIparam\fP, respectively.
 
 .SH "RETURN VALUE"
-!pthread_setschedparam! and !pthread_getschedparam! return 0 on
+\fBpthread_setschedparam\fP and \fBpthread_getschedparam\fP return 0 on
 success and a non-zero error code on error.
 
 .SH ERRORS
-On error, !pthread_setschedparam! returns the following error codes:
+On error, \fBpthread_setschedparam\fP returns the following error codes:
 .RS
 .TP
-!EINVAL!
-|policy| is not one of !SCHED_OTHER!, !SCHED_RR!, !SCHED_FIFO!
+\fBEINVAL\fP
+\fIpolicy\fP is not one of \fBSCHED_OTHER\fP, \fBSCHED_RR\fP, \fBSCHED_FIFO\fP
 
 .TP
-!EINVAL!
-the priority value specified by |param| is not valid for the specified policy
+\fBEINVAL\fP
+the priority value specified by \fIparam\fP is not valid for the specified policy
 
 .TP
-!EPERM!
+\fBEPERM\fP
 the calling process does not have superuser permissions
 
 .TP
-!ESRCH!
-the |target_thread| is invalid or has already terminated
+\fBESRCH\fP
+the \fItarget_thread\fP is invalid or has already terminated
 
 .TP
-!EFAULT!
-|param| points outside the process memory space
+\fBEFAULT\fP
+\fIparam\fP points outside the process memory space
 .RE
 
-On error, !pthread_getschedparam! returns the following error codes:
+On error, \fBpthread_getschedparam\fP returns the following error codes:
 .RS
 .TP
-!ESRCH!
-the |target_thread| is invalid or has already terminated
+\fBESRCH\fP
+the \fItarget_thread\fP is invalid or has already terminated
 
 .TP
-!EFAULT!
-|policy| or |param| point outside the process memory space
+\fBEFAULT\fP
+\fIpolicy\fP or \fIparam\fP point outside the process memory space
 .RE
 
 .SH AUTHOR
 Xavier Leroy <Xavier.Leroy@inria.fr>
 
 .SH "SEE ALSO"
-!sched_setscheduler!(2),
-!sched_getscheduler!(2),
-!sched_getparam!(2),
-!pthread_attr_setschedpolicy!(3),
-!pthread_attr_setschedparam!(3).
+\fBsched_setscheduler\fP(2),
+\fBsched_getscheduler\fP(2),
+\fBsched_getparam\fP(2),
+\fBpthread_attr_setschedpolicy\fP(3),
+\fBpthread_attr_setschedparam\fP(3).

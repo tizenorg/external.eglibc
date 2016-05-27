@@ -119,6 +119,10 @@
 #define	MAX(a,b) (((a)>(b))?(a):(b))
 
 
+/* Unit of `st_blocks'.  */
+#define DEV_BSIZE       512
+
+
 /* Scale factor for scaled integers used to count %cpu time and load avgs.
 
    The number of CPU `tick's that map to a unique `%age' can be expressed

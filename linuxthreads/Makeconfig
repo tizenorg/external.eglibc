@@ -9,3 +9,8 @@ static-thread-library = $(common-objpfx)linuxthreads/libpthread.a
 bounded-thread-library = $(common-objpfx)linuxthreads/libpthread_b.a
 
 rpath-dirs += linuxthreads
+
+# This makes for ptw-*.? object rules in sysd-rules.
+ptw-CPPFLAGS := -DPTW
+sysd-rules-patterns += ptw-%:%
+

@@ -419,7 +419,7 @@ FCT (pattern, string, string_end, no_leading_period, flags, ends, alloca_used)
 			  _NL_CURRENT (LC_COLLATE, _NL_COLLATE_INDIRECTMB);
 # endif
 
-			idx = findidx (&cp);
+			idx = findidx (&cp, 1);
 			if (idx != 0)
 			  {
 			    /* We found a table entry.  Now see whether the
@@ -429,7 +429,7 @@ FCT (pattern, string, string_end, no_leading_period, flags, ends, alloca_used)
 			    int32_t idx2;
 			    const UCHAR *np = (const UCHAR *) n;
 
-			    idx2 = findidx (&np);
+			    idx2 = findidx (&np, string_end - n);
 			    if (idx2 != 0
 				&& (idx >> 24) == (idx2 >> 24)
 				&& len == weights[idx2 & 0xffffff])
@@ -960,14 +960,13 @@ FCT (pattern, string, string_end, no_leading_period, flags, ends, alloca_used)
 		  }
 		else if (c == L('[') && *p == L('.'))
 		  {
-		    ++p;
 		    while (1)
 		      {
 			c = *++p;
-			if (c == '\0')
+			if (c == L('\0'))
 			  return FNM_NOMATCH;
 
-			if (*p == L('.') && p[1] == L(']'))
+			if (c == L('.') && p[1] == L(']'))
 			  break;
 		      }
 		    p += 2;

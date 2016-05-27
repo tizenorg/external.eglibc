@@ -34,6 +34,7 @@
 #define FLAG_POWERPC_LIB64	0x0500
 #define FLAG_MIPS64_LIBN32	0x0600
 #define FLAG_MIPS64_LIBN64	0x0700
+#define FLAG_ARM_LIBHF		0x0900
 
 /* Name of auxiliary cache.  */
 #define _PATH_LDCONFIG_AUX_CACHE "/var/cache/ldconfig/aux-cache"

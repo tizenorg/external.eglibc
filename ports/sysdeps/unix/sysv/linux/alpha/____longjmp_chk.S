@@ -58,7 +58,7 @@ ____longjmp_chk:
 	PTR_DEMANGLE2(s3, t1)
 	PTR_DEMANGLE2(fp, t1)
 #endif
-	cmpule	t0, sp, t1
+	cmpule	s3, sp, t1
 	bne	t1, .Lfail
 
 	.align	4

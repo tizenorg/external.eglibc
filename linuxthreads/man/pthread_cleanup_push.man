@@ -21,7 +21,7 @@ void pthread_cleanup_pop_restore_np(int execute);
 .SH DESCRIPTION
 
 Cleanup handlers are functions that get called when a thread
-terminates, either by calling !pthread_exit!(3) or because of
+terminates, either by calling \fBpthread_exit\fP(3) or because of
 cancellation. Cleanup handlers are installed and removed following a
 stack-like discipline.
 
@@ -32,41 +32,41 @@ remain locked forever and prevent other threads from executing
 normally. The best way to avoid this is, just before locking the
 mutex, to install a cleanup handler whose effect is to unlock the
 mutex. Cleanup handlers can be used similarly to free blocks allocated
-with !malloc!(3) or close file descriptors on thread termination.
+with \fBmalloc\fP(3) or close file descriptors on thread termination.
 
-!pthread_cleanup_push! installs the |routine| function with argument
-|arg| as a cleanup handler. From this point on to the matching
-!pthread_cleanup_pop!, the function |routine| will be called with
-arguments |arg| when the thread terminates, either through !pthread_exit!(3)
+\fBpthread_cleanup_push\fP installs the \fIroutine\fP function with argument
+\fIarg\fP as a cleanup handler. From this point on to the matching
+\fBpthread_cleanup_pop\fP, the function \fIroutine\fP will be called with
+arguments \fIarg\fP when the thread terminates, either through \fBpthread_exit\fP(3)
 or by cancellation. If several cleanup handlers are active at that
 point, they are called in LIFO order: the most recently installed
 handler is called first.
 
-!pthread_cleanup_pop! removes the most recently installed cleanup
-handler. If the |execute| argument is not 0, it also executes the
-handler, by calling the |routine| function with arguments |arg|. If
-the |execute| argument is 0, the handler is only removed but not
+\fBpthread_cleanup_pop\fP removes the most recently installed cleanup
+handler. If the \fIexecute\fP argument is not 0, it also executes the
+handler, by calling the \fIroutine\fP function with arguments \fIarg\fP. If
+the \fIexecute\fP argument is 0, the handler is only removed but not
 executed.
 
-Matching pairs of !pthread_cleanup_push! and !pthread_cleanup_pop!
+Matching pairs of \fBpthread_cleanup_push\fP and \fBpthread_cleanup_pop\fP
 must occur in the same function, at the same level of block nesting.
-Actually, !pthread_cleanup_push! and !pthread_cleanup_pop! are macros,
-and the expansion of !pthread_cleanup_push! introduces an open brace !{!
-with the matching closing brace !}! being introduced by the expansion
-of the matching !pthread_cleanup_pop!.
+Actually, \fBpthread_cleanup_push\fP and \fBpthread_cleanup_pop\fP are macros,
+and the expansion of \fBpthread_cleanup_push\fP introduces an open brace \fB{\fP
+with the matching closing brace \fB}\fP being introduced by the expansion
+of the matching \fBpthread_cleanup_pop\fP.
 
-!pthread_cleanup_push_defer_np! is a non-portable extension that
-combines !pthread_cleanup_push! and !pthread_setcanceltype!(3).
-It pushes a cleanup handler just as !pthread_cleanup_push! does, but
+\fBpthread_cleanup_push_defer_np\fP is a non-portable extension that
+combines \fBpthread_cleanup_push\fP and \fBpthread_setcanceltype\fP(3).
+It pushes a cleanup handler just as \fBpthread_cleanup_push\fP does, but
 also saves the current cancellation type and sets it to deferred
 cancellation. This ensures that the cleanup mechanism is effective
 even if the thread was initially in asynchronous cancellation mode.
 
-!pthread_cleanup_pop_restore_np! pops a cleanup handler introduced by
-!pthread_cleanup_push_defer_np!, and restores the cancellation type to
-its value at the time !pthread_cleanup_push_defer_np! was called.
+\fBpthread_cleanup_pop_restore_np\fP pops a cleanup handler introduced by
+\fBpthread_cleanup_push_defer_np\fP, and restores the cancellation type to
+its value at the time \fBpthread_cleanup_push_defer_np\fP was called.
 
-!pthread_cleanup_push_defer_np! and !pthread_cleanup_pop_restore_np!
+\fBpthread_cleanup_push_defer_np\fP and \fBpthread_cleanup_pop_restore_np\fP
 must occur in matching pairs, at the same level of block nesting.
 
 The following sequence
@@ -113,14 +113,14 @@ None.
 Xavier Leroy <Xavier.Leroy@inria.fr>
 
 .SH "SEE ALSO"
-!pthread_exit!(3),
-!pthread_cancel!(3),
-!pthread_setcanceltype!(3).
+\fBpthread_exit\fP(3),
+\fBpthread_cancel\fP(3),
+\fBpthread_setcanceltype\fP(3).
 
 .SH EXAMPLE
 
-Here is how to lock a mutex |mut| in such a way that it will be
-unlocked if the thread is canceled while |mut| is locked:
+Here is how to lock a mutex \fImut\fP in such a way that it will be
+unlocked if the thread is canceled while \fImut\fP is locked:
 
 .RS
 .ft 3
@@ -149,10 +149,10 @@ pthread_cleanup_pop(1);
 .fi
 
 Notice that the code above is safe only in deferred cancellation mode
-(see !pthread_setcanceltype!(3)). In asynchronous cancellation mode,
-a cancellation can occur between !pthread_cleanup_push! and
-!pthread_mutex_lock!, or between !pthread_mutex_unlock! and
-!pthread_cleanup_pop!, resulting in both cases in the thread trying to
+(see \fBpthread_setcanceltype\fP(3)). In asynchronous cancellation mode,
+a cancellation can occur between \fBpthread_cleanup_push\fP and
+\fBpthread_mutex_lock\fP, or between \fBpthread_mutex_unlock\fP and
+\fBpthread_cleanup_pop\fP, resulting in both cases in the thread trying to
 unlock a mutex not locked by the current thread. This is the main
 reason why asynchronous cancellation is difficult to use.
 
@@ -177,7 +177,7 @@ pthread_setcanceltype(oldtype, NULL);
 
 The code above can be rewritten in a more compact and more
 efficient way, using the non-portable functions
-!pthread_cleanup_push_defer_np! and !pthread_cleanup_pop_restore_np!:
+\fBpthread_cleanup_push_defer_np\fP and \fBpthread_cleanup_pop_restore_np\fP:
 
 .RS
 .ft 3

@@ -39,6 +39,7 @@
 #include <hp-timing.h>
 #include <tls.h>
 #include <kernel-features.h>
+#include <gnu/option-groups.h> /* For __OPTION_EGLIBC_RTLD_DEBUG.  */
 
 __BEGIN_DECLS
 
@@ -427,7 +428,7 @@ struct rtld_global
   /* The object to be initialized first.  */
   EXTERN struct link_map *_dl_initfirst;
 
-#if HP_TIMING_AVAIL || HP_SMALL_TIMING_AVAIL
+#if HP_TIMING_AVAIL || HP_SMALL_TIMING_AVAIL || HP_TIMING_PAD
   /* Start time on CPU clock.  */
   EXTERN hp_timing_t _dl_cpuclock_offset;
 #endif
@@ -641,7 +642,7 @@ struct rtld_global_ro
   /* All search directories defined at startup.  */
   EXTERN struct r_search_path_elem *_dl_init_all_dirs;
 
-#if HP_TIMING_AVAIL || HP_SMALL_TIMING_AVAIL
+#if HP_TIMING_AVAIL || HP_SMALL_TIMING_AVAIL || HP_TIMING_PAD
   /* Overhead of a high-precision timing measurement.  */
   EXTERN hp_timing_t _dl_hp_timing_overhead;
 #endif
@@ -692,9 +693,6 @@ struct rtld_global_ro
   /* List of auditing interfaces.  */
   struct audit_ifaces *_dl_audit;
   unsigned int _dl_naudit;
-
-  /* 0 if internal pointer values should not be guarded, 1 if they should.  */
-  EXTERN int _dl_pointer_guard;
 };
 # define __rtld_global_attribute__
 # ifdef IS_IN_rtld
@@ -731,7 +729,11 @@ rtld_hidden_proto (_dl_make_stack_executable)
    might use the variable which results in copy relocations on some
    platforms.  But this does not matter, ld.so can always use the local
    copy.  */
-extern void *__libc_stack_end attribute_relro;
+extern void *__libc_stack_end
+#ifndef LIBC_STACK_END_NOT_RELRO
+     attribute_relro
+#endif
+     ;
 rtld_hidden_proto (__libc_stack_end)
 
 /* Parameters passed to the dynamic linker.  */

@@ -29,6 +29,8 @@
 # define bit_SSSE3	(1 << 9)
 # define bit_SSE4_1	(1 << 19)
 # define bit_SSE4_2	(1 << 20)
+# define bit_OSXSAVE	(1 << 27)
+# define bit_AVX	(1 << 28)
 
 # define index_SSE2	COMMON_CPUID_INDEX_1*CPUID_SIZE+CPUID_EDX_OFFSET
 # define index_SSSE3	COMMON_CPUID_INDEX_1*CPUID_SIZE+CPUID_ECX_OFFSET

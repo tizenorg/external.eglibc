@@ -168,6 +168,87 @@ local_strdup (const char *s)
 }
 
 
+static bool
+is_trusted_path (const char *path, size_t len)
+{
+  const char *trun = system_dirs;
+
+  for (size_t idx = 0; idx < nsystem_dirs_len; ++idx)
+    {
+      if (len == system_dirs_len[idx] && memcmp (trun, path, len) == 0)
+	/* Found it.  */
+	return true;
+
+      trun += system_dirs_len[idx] + 1;
+    }
+
+  return false;
+}
+
+
+static bool
+is_trusted_path_normalize (const char *path, size_t len)
+{
+  if (len == 0)
+    return false;
+
+  if (*path == ':')
+    {
+      ++path;
+      --len;
+    }
+
+  char *npath = (char *) alloca (len + 2);
+  char *wnp = npath;
+  while (*path != '\0')
+    {
+      if (path[0] == '/')
+	{
+	  if (path[1] == '.')
+	    {
+	      if (path[2] == '.' && (path[3] == '/' || path[3] == '\0'))
+		{
+		  while (wnp > npath && *--wnp != '/')
+		    ;
+		  path += 3;
+		  continue;
+		}
+	      else if (path[2] == '/' || path[2] == '\0')
+		{
+		  path += 2;
+		  continue;
+		}
+	    }
+
+	  if (wnp > npath && wnp[-1] == '/')
+	    {
+	      ++path;
+	      continue;
+	    }
+	}
+
+      *wnp++ = *path++;
+    }
+
+  if (wnp == npath || wnp[-1] != '/')
+    *wnp++ = '/';
+
+  const char *trun = system_dirs;
+
+  for (size_t idx = 0; idx < nsystem_dirs_len; ++idx)
+    {
+      if (wnp - npath >= system_dirs_len[idx]
+	  && memcmp (trun, npath, system_dirs_len[idx]) == 0)
+	/* Found it.  */
+	return true;
+
+      trun += system_dirs_len[idx] + 1;
+    }
+
+  return false;
+}
+
+
 static size_t
 is_dst (const char *start, const char *name, const char *str,
 	int is_path, int secure)
@@ -200,7 +281,8 @@ is_dst (const char *start, const char *name, const char *str,
     return 0;
 
   if (__builtin_expect (secure, 0)
-      && ((name[len] != '\0' && (!is_path || name[len] != ':'))
+      && ((name[len] != '\0' && name[len] != '/'
+	   && (!is_path || name[len] != ':'))
 	  || (name != start + 1 && (!is_path || name[-2] != ':'))))
     return 0;
 
@@ -240,13 +322,14 @@ _dl_dst_substitute (struct link_map *l, const char *name, char *result,
 		    int is_path)
 {
   const char *const start = name;
-  char *last_elem, *wp;
 
   /* Now fill the result path.  While copying over the string we keep
      track of the start of the last path element.  When we come accross
      a DST we copy over the value or (if the value is not available)
      leave the entire path element out.  */
-  last_elem = wp = result;
+  char *wp = result;
+  char *last_elem = result;
+  bool check_for_trusted = false;
 
   do
     {
@@ -265,6 +348,9 @@ _dl_dst_substitute (struct link_map *l, const char *name, char *result,
 	      else
 #endif
 		repl = l->l_origin;
+
+	      check_for_trusted = (INTUSE(__libc_enable_secure)
+				   && l->l_type == lt_executable);
 	    }
 	  else if ((len = is_dst (start, name, "PLATFORM", is_path, 0)) != 0)
 	    repl = GLRO(dl_platform);
@@ -284,6 +370,10 @@ _dl_dst_substitute (struct link_map *l, const char *name, char *result,
 	      name += len;
 	      while (*name != '\0' && (!is_path || *name != ':'))
 		++name;
+	      /* Also skip following colon if this is the first rpath
+		 element, but keep an empty element at the end.  */
+	      if (wp == result && is_path && *name == ':' && name[1] != '\0')
+		++name;
 	    }
 	  else
 	    /* No DST we recognize.  */
@@ -293,10 +383,27 @@ _dl_dst_substitute (struct link_map *l, const char *name, char *result,
 	{
 	  *wp++ = *name++;
 	  if (is_path && *name == ':')
-	    last_elem = wp;
+	    {
+	      /* In SUID/SGID programs, after $ORIGIN expansion the
+		 normalized path must be rooted in one of the trusted
+		 directories.  */
+	      if (__builtin_expect (check_for_trusted, false)
+		  && !is_trusted_path_normalize (last_elem, wp - last_elem))
+		wp = last_elem;
+	      else
+		last_elem = wp;
+
+	      check_for_trusted = false;
+	    }
 	}
     }
   while (*name != '\0');
+
+  /* In SUID/SGID programs, after $ORIGIN expansion the normalized
+     path must be rooted in one of the trusted directories.  */
+  if (__builtin_expect (check_for_trusted, false)
+      && !is_trusted_path_normalize (last_elem, wp - last_elem))
+    wp = last_elem;
 
   *wp = '\0';
 
@@ -310,7 +417,7 @@ _dl_dst_substitute (struct link_map *l, const char *name, char *result,
    belonging to the map is loaded.  In this case the path element
    containing $ORIGIN is left out.  */
 static char *
-expand_dynamic_string_token (struct link_map *l, const char *s)
+expand_dynamic_string_token (struct link_map *l, const char *s, int is_path)
 {
   /* We make two runs over the string.  First we determine how large the
      resulting string is and then we copy it over.  Since this is no
@@ -321,7 +428,7 @@ expand_dynamic_string_token (struct link_map *l, const char *s)
   char *result;
 
   /* Determine the number of DST elements.  */
-  cnt = DL_DST_COUNT (s, 1);
+  cnt = DL_DST_COUNT (s, is_path);
 
   /* If we do not have to replace anything simply copy the string.  */
   if (__builtin_expect (cnt, 0) == 0)
@@ -335,7 +442,7 @@ expand_dynamic_string_token (struct link_map *l, const char *s)
   if (result == NULL)
     return NULL;
 
-  return _dl_dst_substitute (l, s, result, 1);
+  return _dl_dst_substitute (l, s, result, is_path);
 }
 
 
@@ -407,33 +514,8 @@ fillin_rpath (char *rpath, struct r_search_path_elem **result, const char *sep,
 	cp[len++] = '/';
 
       /* Make sure we don't use untrusted directories if we run SUID.  */
-      if (__builtin_expect (check_trusted, 0))
-	{
-	  const char *trun = system_dirs;
-	  size_t idx;
-	  int unsecure = 1;
-
-	  /* All trusted directories must be complete names.  */
-	  if (cp[0] == '/')
-	    {
-	      for (idx = 0; idx < nsystem_dirs_len; ++idx)
-		{
-		  if (len == system_dirs_len[idx]
-		      && memcmp (trun, cp, len) == 0)
-		    {
-		      /* Found it.  */
-		      unsecure = 0;
-		      break;
-		    }
-
-		  trun += system_dirs_len[idx] + 1;
-		}
-	    }
-
-	  if (unsecure)
-	    /* Simply drop this directory.  */
-	    continue;
-	}
+      if (__builtin_expect (check_trusted, 0) && !is_trusted_path (cp, len))
+	continue;
 
       /* See if this directory is already known.  */
       for (dirp = GL(dl_all_dirs); dirp != NULL; dirp = dirp->next)
@@ -551,11 +633,19 @@ decompose_rpath (struct r_search_path_struct *sps,
 
   /* Make a writable copy.  At the same time expand possible dynamic
      string tokens.  */
-  copy = expand_dynamic_string_token (l, rpath);
+  copy = expand_dynamic_string_token (l, rpath, 1);
   if (copy == NULL)
     {
       errstring = N_("cannot create RUNPATH/RPATH copy");
       goto signal_error;
+    }
+
+  /* Ignore empty rpaths.  */
+  if (*copy == 0)
+    {
+      free (copy);
+      sps->dirs = (struct r_search_path_elem **) -1;
+      return false;
     }
 
   /* Count the number of necessary elements in the result array.  */
@@ -1388,7 +1478,11 @@ cannot allocate TLS data structures for initial thread");
 	  if (__builtin_expect (p + s <= relro_end, 1))
 	    {
 	      /* The variable lies in the region protected by RELRO.  */
-	      __mprotect ((void *) p, s, PROT_READ|PROT_WRITE);
+	      if (__mprotect ((void *) p, s, PROT_READ|PROT_WRITE) < 0)
+		{
+		  errstring = N_("cannot change memory protections");
+		  goto call_lose_errno;
+		}
 	      __stack_prot |= PROT_READ|PROT_WRITE|PROT_EXEC;
 	      __mprotect ((void *) p, s, PROT_READ);
 	    }
@@ -1546,6 +1640,208 @@ print_search_path (struct r_search_path_elem **list,
   else
     _dl_debug_printf_c ("\t\t(%s)\n", what);
 }
+
+#ifdef __arm__
+/* Read an unsigned leb128 value from P, store the value in VAL, return
+   P incremented past the value.  We assume that a word is large enough to
+   hold any value so encoded; if it is smaller than a pointer on some target,
+   pointers should not be leb128 encoded on that target.  */
+static const unsigned char *
+read_uleb128 (const unsigned char *p, unsigned long *val)
+{
+  unsigned int shift = 0;
+  unsigned char byte;
+  unsigned long result;
+
+  result = 0;
+  do
+    {
+      byte = *p++;
+      result |= (byte & 0x7f) << shift;
+      shift += 7;
+    }
+  while (byte & 0x80);
+
+  *val = result;
+  return p;
+}
+
+
+#define ATTR_TAG_FILE          1
+#define ABI_VFP_args          28
+#define VFP_ARGS_IN_VFP_REGS   1
+
+/* Check consistency of ABI in the ARM attributes. Search through the
+   section headers looking for the ARM attributes section, then
+   check the VFP_ARGS attribute. */
+static int
+check_arm_attributes_hfabi(int fd, ElfW(Ehdr) *ehdr, bool *is_hf)
+{
+  unsigned int i;
+  ElfW(Shdr) *shdrs;
+  int sh_size = ehdr->e_shentsize * ehdr->e_shnum;
+
+  /* Load in the section headers so we can look for the attributes
+   * section */
+  shdrs = alloca(sh_size);
+  __lseek (fd, ehdr->e_shoff, SEEK_SET);
+  if ((size_t) __libc_read (fd, (void *) shdrs, sh_size) != sh_size)
+    return -1;
+
+  for (i = 0; i < ehdr->e_shnum; i++)
+    {        
+      if (SHT_ARM_ATTRIBUTES == shdrs[i].sh_type)
+        {
+	  /* We've found a likely section. Load the contents and
+	   * check the tags */
+	  unsigned char *contents = alloca(shdrs[i].sh_size);
+	  unsigned char *p = contents;
+	  unsigned char * end;
+
+	  __lseek (fd, shdrs[i].sh_offset, SEEK_SET);
+	  if ((size_t) __libc_read (fd, (void *) contents, shdrs[i].sh_size) != shdrs[i].sh_size)
+	    return -1;
+
+	  /* Sanity-check the attribute section details. Make sure
+	   * that it's the "aeabi" section, that's all we care
+	   * about. */
+	  if (*p == 'A')
+            {
+	      unsigned long len = shdrs[i].sh_size - 1;
+	      unsigned long namelen;
+	      p++;
+                
+	      while (len > 0)
+                {
+		  unsigned long section_len = p[0] | p[1] << 8 | p[2] << 16 | p[3] << 24;
+		  if (section_len > len)
+                    {
+		      _dl_debug_printf_c ("    invalid section len %lu, max remaining %lu\n", section_len, len);
+		      section_len = len;
+                    }
+
+		  p += 4;                    
+		  len -= section_len;
+		  section_len -= 4;
+
+		  if (0 != strcmp((char *)p, "aeabi"))
+                    {
+		      _dl_debug_printf_c ("    ignoring unknown attr section %s\n", p);
+		      p += section_len;
+		      continue;
+                    }
+		  namelen = strlen((char *)p) + 1;
+		  p += namelen;
+		  section_len -= namelen;
+                    
+		  /* We're in a valid section. Walk through this
+		   * section looking for the tag we care about
+		   * (ABI_VFP_args) */
+		  while (section_len > 0)
+                    {
+		      unsigned long tag, val;
+		      unsigned long size;
+
+		      end = p;
+		      tag = (*p++);
+
+		      size = p[0] | p[1] << 8 | p[2] << 16 | p[3] << 24;
+		      if (size > section_len)
+                        {
+			  _dl_debug_printf_c ("    invalid subsection length %lu, max allowed %lu\n", size, section_len);
+			  size = section_len;
+                        }
+		      p += 4;
+                        
+		      section_len -= size;
+		      end += size;
+		      if (ATTR_TAG_FILE != tag)
+                        {
+			  /* ignore, we don't care */
+			  _dl_debug_printf_c ("    ignoring unknown subsection with type %u length %lu\n", tag, size);
+			  p = end;
+			  continue;
+                        }
+		      while (p < end)
+                        {
+			  p = read_uleb128 (p, &tag);
+			  /* Handle the different types of tag. */
+			  if ( (tag == 4) || (tag == 5) || (tag == 67) )
+                            {
+			      /* Special cases for string values */
+			      namelen = strlen((char *)p) + 1;
+			      p += namelen;
+                            }
+			  else
+                            {
+			      p = read_uleb128 (p, &val);
+                            }
+			  if ( (tag == ABI_VFP_args) && (val == VFP_ARGS_IN_VFP_REGS) )
+                            {
+			      *is_hf = 1;
+			      return 0;
+                            }
+                        }
+                    }
+                }
+            }                
+        }            
+    }
+    
+  return 0;
+}
+
+
+/* ARM-specific checks. If we're built using the HF ABI, then fail any
+   attempts to use the SF ABI (and vice versa). Then, check for
+   consistency of ABI in terms of passing VFP args. */
+static int
+arm_specific_checks(int fd, const char *name, ElfW(Ehdr) *ehdr)
+{
+  static int all_hf = -1; /* unset */
+  bool is_hf = false;
+  int ret;
+
+  ret = check_arm_attributes_hfabi(fd, ehdr, &is_hf);
+  if (ret != 0)
+    return ret;
+
+#ifdef __ARM_PCS_VFP
+  if (!is_hf)
+    return EINVAL;
+#else
+  if (is_hf)
+    return EINVAL;
+#endif
+
+  if (all_hf == -1)
+    {
+      if (is_hf)
+	all_hf = 1;
+      else
+	all_hf = 0;
+    }
+  else if (all_hf == 1 && !is_hf)
+    return EINVAL;
+  else if (all_hf == 0 && is_hf)
+    return EINVAL;
+  return 0;
+}
+#endif
+
+
+/* Run any architecture-specific checks that might be needed for the
+   current architecture. */
+static int
+arch_specific_checks(int fd, const char *name, ElfW(Ehdr) *ehdr)
+{
+#ifdef __arm__
+    return arm_specific_checks(fd, name, ehdr);
+#endif
+
+  return 0;
+}
+
 
 /* Open a file and verify it is an ELF file for this architecture.  We
    ignore only ELF files for other architectures.  Non-ELF files and
@@ -1745,6 +2041,7 @@ open_verify (const char *name, struct filebuf *fbp, struct link_map *loader,
 
       /* Check .note.ABI-tag if present.  */
       for (ph = phdr; ph < &phdr[ehdr->e_phnum]; ++ph)
+      {
 	if (ph->p_type == PT_NOTE && ph->p_filesz >= 32 && ph->p_align >= 4)
 	  {
 	    ElfW(Addr) size = ph->p_filesz;
@@ -1792,6 +2089,21 @@ open_verify (const char *name, struct filebuf *fbp, struct link_map *loader,
 
 	    break;
 	  }
+    }
+      if (-1 != fd)
+	{
+	  int error = arch_specific_checks(fd, name, ehdr);
+	  if (EINVAL == error)
+	    {
+	      goto close_and_out;
+	    }
+	  if (0 != error)
+	    {
+	      errstring = N_("Unable to run arch-specific checks\n");
+	      goto call_lose;
+	    }
+	}
+
     }
 
   return fd;
@@ -1988,10 +2300,13 @@ _dl_map_object (struct link_map *loader, const char *name,
 	  soname = ((const char *) D_PTR (l, l_info[DT_STRTAB])
 		    + l->l_info[DT_SONAME]->d_un.d_val);
 	  if (strcmp (name, soname) != 0)
+#ifdef __arm__
+            if (strcmp(name, "ld-linux.so.3") || strcmp(soname, "ld-linux-armhf.so.3"))
+#endif
 	    continue;
 
 	  /* We have a match on a new name -- cache it.  */
-	  add_name_to_object (l, soname);
+	  add_name_to_object (l, name);
 	  l->l_soname_added = 1;
 	}
 
@@ -2175,7 +2490,7 @@ _dl_map_object (struct link_map *loader, const char *name,
     {
       /* The path may contain dynamic string tokens.  */
       realname = (loader
-		  ? expand_dynamic_string_token (loader, name)
+		  ? expand_dynamic_string_token (loader, name, 0)
 		  : local_strdup (name));
       if (realname == NULL)
 	fd = -1;

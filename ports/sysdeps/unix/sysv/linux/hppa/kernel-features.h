@@ -36,4 +36,10 @@
 # define __ASSUME_LWS_CAS		1
 #endif
 
+/* Support for the accept4 and recvmmsg syscalls was added in 2.6.34.  */
+#if __LINUX_KERNEL_VERSION >= 0x020622
+# define __ASSUME_ACCEPT4_SYSCALL	1
+# define __ASSUME_RECVMMSG_SYSCALL	1
+#endif
+
 #include_next <kernel-features.h>

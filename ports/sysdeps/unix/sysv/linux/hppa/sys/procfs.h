@@ -29,10 +29,8 @@
    GDB unless you know what you are doing.  */
 
 #include <features.h>
-#include <signal.h>
 #include <sys/time.h>
 #include <sys/types.h>
-#include <sys/ucontext.h>
 #include <sys/user.h>
 
 __BEGIN_DECLS

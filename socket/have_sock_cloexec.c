@@ -16,9 +16,14 @@
    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307 USA.  */
 
+#include <fcntl.h>
 #include <sys/socket.h>
 #include <kernel-features.h>
 
 #if defined SOCK_CLOEXEC && !defined __ASSUME_SOCK_CLOEXEC
 int __have_sock_cloexec;
+#endif
+
+#if defined O_CLOEXEC && !defined __ASSUME_PIPE2
+int __have_pipe2;
 #endif

@@ -1,3 +1,9 @@
+ifeq ($(subdir),csu)
+routines += unwind-resume
+shared-only-routines += unwind-resume
+CFLAGS-unwind-resume.c += -fexceptions -fasynchronous-unwind-tables
+endif
+
 ifeq ($(subdir),rt)
 librt-sysdep_routines += timer_routines
 CPPFLAGS += -DBROKEN_THREAD_SIGNALS

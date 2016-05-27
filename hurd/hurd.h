@@ -1,4 +1,4 @@
-/* Copyright (C) 1993,94,95,96,97,98,99,2001,2002,2007
+/* Copyright (C) 1993,94,95,96,97,98,99,2001,2002,2007,2010
    Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
@@ -48,6 +48,9 @@
 #define _HURD_H_EXTERN_INLINE __extern_inline
 #endif
 
+int __hurd_fail (error_t err);
+
+#ifdef __USE_EXTERN_INLINES
 _HURD_H_EXTERN_INLINE int
 __hurd_fail (error_t err)
 {
@@ -77,6 +80,7 @@ __hurd_fail (error_t err)
   errno = err;
   return -1;
 }
+#endif
 
 /* Basic ports and info, initialized by startup.  */
 
@@ -243,12 +247,20 @@ extern FILE *fopenport (io_t port, const char *mode);
 extern FILE *__fopenport (io_t port, const char *mode);
 
 
-/* Execute a file, replacing TASK's current program image.  */
+/* Deprecated: use _hurd_exec_file_name instead.  */
 
 extern error_t _hurd_exec (task_t task,
 			   file_t file,
 			   char *const argv[],
-			   char *const envp[]);
+			   char *const envp[]) __attribute_deprecated__;
+
+/* Execute a file, replacing TASK's current program image.  */
+
+extern error_t _hurd_exec_file_name (task_t task,
+				     file_t file,
+				     const char *filename,
+				     char *const argv[],
+				     char *const envp[]);
 
 
 /* Inform the proc server we have exited with STATUS, and kill the

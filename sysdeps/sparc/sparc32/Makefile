@@ -24,6 +24,14 @@ ifeq ($(subdir),csu)
 CFLAGS-initfini.s += -mcpu=v7
 endif
 
+ifeq ($(subdir),csu)
+ifeq (yes,$(build-shared))
+# Compatibility
+sysdep_routines += libgcc-compat
+shared-only-routines += libgcc-compat
+endif
+endif
+
 # We distribute these files, even though they are generated,
 # so as to avoid the need for a functioning m4 to build the library.
 divrem := sdiv udiv rem urem

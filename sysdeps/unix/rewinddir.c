@@ -33,5 +33,6 @@ rewinddir (dirp)
   dirp->filepos = 0;
   dirp->offset = 0;
   dirp->size = 0;
+  dirp->errcode = 0;
   __libc_lock_unlock (dirp->lock);
 }

@@ -1,5 +1,5 @@
 /* Run time dynamic linker.
-   Copyright (C) 1995-2006, 2007, 2008, 2009, 2010 Free Software Foundation, Inc.
+   Copyright (C) 1995-2010, 2011 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -17,6 +17,7 @@
    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307 USA.  */
 
+#include <gnu/option-groups.h>
 #include <errno.h>
 #include <dlfcn.h>
 #include <fcntl.h>
@@ -154,13 +155,17 @@ struct rtld_global_ro _rtld_global_ro attribute_relro =
 #ifdef NEED_DL_SYSINFO
     ._dl_sysinfo = DL_SYSINFO_DEFAULT,
 #endif
+#ifdef __GNU__
+/* GNU/Hurd needs this because otherwise libpthread's pthread_mutex_lock gets
+ *  * overridden by libX11's stubs.  */
+    ._dl_dynamic_weak = 1,
+#endif
     ._dl_debug_fd = STDERR_FILENO,
     ._dl_use_load_bias = -2,
     ._dl_correct_cache_id = _DL_CACHE_DEFAULT_ID,
     ._dl_hwcap_mask = HWCAP_IMPORTANT,
     ._dl_lazy = 1,
     ._dl_fpu_control = _FPU_DEFAULT,
-    ._dl_pointer_guard = 1,
 
     /* Function pointers.  */
     ._dl_debug_printf = _dl_debug_printf,
@@ -392,14 +397,14 @@ _dl_start (void *arg)
      know it is available.  We do not have to clear the memory if we
      do not have to use the temporary bootstrap_map.  Global variables
      are initialized to zero by default.  */
-#ifndef DONT_USE_BOOTSTRAP_MAP
+#if !defined DONT_USE_BOOTSTRAP_MAP
 # ifdef HAVE_BUILTIN_MEMSET
   __builtin_memset (bootstrap_map.l_info, '\0', sizeof (bootstrap_map.l_info));
 # else
-  for (size_t cnt = 0;
-       cnt < sizeof (bootstrap_map.l_info) / sizeof (bootstrap_map.l_info[0]);
-       ++cnt)
-    bootstrap_map.l_info[cnt] = 0;
+  /* Clear the whole bootstrap_map structure */
+  for (char *cnt = (char *)&(bootstrap_map);
+       cnt < ((char *)&(bootstrap_map) + sizeof (bootstrap_map));
+       *cnt++ = '\0');
 # endif
 # if USE___THREAD
   bootstrap_map.l_tls_modid = 0;
@@ -857,15 +862,12 @@ security_init (void)
 #endif
 
   /* Set up the pointer guard as well, if necessary.  */
-  if (GLRO(dl_pointer_guard))
-    {
-      uintptr_t pointer_chk_guard = _dl_setup_pointer_guard (_dl_random,
-							     stack_chk_guard);
+  uintptr_t pointer_chk_guard
+    = _dl_setup_pointer_guard (_dl_random, stack_chk_guard);
 #ifdef THREAD_SET_POINTER_GUARD
-      THREAD_SET_POINTER_GUARD (pointer_chk_guard);
+  THREAD_SET_POINTER_GUARD (pointer_chk_guard);
 #endif
-      __pointer_chk_guard_local = pointer_chk_guard;
-    }
+  __pointer_chk_guard_local = pointer_chk_guard;
 
   /* We do not need the _dl_random value anymore.  The less
      information we leave behind, the better, so clear the
@@ -2179,6 +2181,10 @@ ERROR: ld.so: object '%s' cannot be loaded as audit interface: %s; ignored.\n",
      we need it in the memory handling later.  */
   GLRO(dl_initial_searchlist) = *GL(dl_ns)[LM_ID_BASE]._ns_main_searchlist;
 
+  /* Remember the last search directory added at startup, now that
+     malloc will no longer be the one from dl-minimal.c.  */
+  GLRO(dl_init_all_dirs) = GL(dl_all_dirs);
+
   if (prelinked)
     {
       if (main_map->l_info [ADDRIDX (DT_GNU_CONFLICT)] != NULL)
@@ -2298,9 +2304,8 @@ ERROR: ld.so: object '%s' cannot be loaded as audit interface: %s; ignored.\n",
 			  lossage);
     }
 
-  /* Remember the last search directory added at startup, now that
-     malloc will no longer be the one from dl-minimal.c.  */
-  GLRO(dl_init_all_dirs) = GL(dl_all_dirs);
+  /* Make sure no new search directories have been added.  */
+  assert (GLRO(dl_init_all_dirs) == GL(dl_all_dirs));
 
   if (! prelinked && rtld_multiple_ref)
     {
@@ -2653,9 +2658,6 @@ process_envvars (enum mode *modep)
 	      GLRO(dl_use_load_bias) = envline[14] == '1' ? -1 : 0;
 	      break;
 	    }
-
-	  if (memcmp (envline, "POINTER_GUARD", 13) == 0)
-	    GLRO(dl_pointer_guard) = envline[14] != '0';
 	  break;
 
 	case 14:

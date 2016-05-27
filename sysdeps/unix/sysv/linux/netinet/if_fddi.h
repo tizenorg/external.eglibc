@@ -23,6 +23,7 @@
 #include <sys/types.h>
 #include <asm/types.h>
 
+#include <linux/types.h>
 #include <linux/if_fddi.h>
 
 #ifdef __USE_BSD

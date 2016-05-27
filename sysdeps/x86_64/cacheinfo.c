@@ -130,7 +130,7 @@ static const struct intel_02_cache_info
     { 0xdc, 12, 64, M(_SC_LEVEL3_CACHE_SIZE),  2097152 },
     { 0xdd, 12, 64, M(_SC_LEVEL3_CACHE_SIZE),  4194304 },
     { 0xde, 12, 64, M(_SC_LEVEL3_CACHE_SIZE),  8388608 },
-    { 0xe3, 16, 64, M(_SC_LEVEL3_CACHE_SIZE),  2097152 },
+    { 0xe2, 16, 64, M(_SC_LEVEL3_CACHE_SIZE),  2097152 },
     { 0xe3, 16, 64, M(_SC_LEVEL3_CACHE_SIZE),  4194304 },
     { 0xe4, 16, 64, M(_SC_LEVEL3_CACHE_SIZE),  8388608 },
     { 0xea, 24, 64, M(_SC_LEVEL3_CACHE_SIZE), 12582912 },
@@ -180,6 +180,57 @@ intel_check_word (int name, unsigned int value, bool *has_level_2,
 	  if (folded_rel_name == M(_SC_LEVEL3_CACHE_SIZE))
 	    /* No need to look further.  */
 	    break;
+	}
+      else if (byte == 0xff)
+	{
+	  /* CPUID leaf 0x4 contains all the information.  We need to
+	     iterate over it.  */
+	  unsigned int eax;
+	  unsigned int ebx;
+	  unsigned int ecx;
+	  unsigned int edx;
+
+	  unsigned int round = 0;
+	  while (1)
+	    {
+	      asm volatile ("xchgl %%ebx, %1; cpuid; xchgl %%ebx, %1"
+			    : "=a" (eax), "=r" (ebx), "=c" (ecx), "=d" (edx)
+			    : "0" (4), "2" (round));
+
+	      enum { null = 0, data = 1, inst = 2, uni = 3 } type = eax & 0x1f;
+	      if (type == null)
+		/* That was the end.  */
+		break;
+
+	      unsigned int level = (eax >> 5) & 0x7;
+
+	      if ((level == 1 && type == data
+		   && folded_rel_name == M(_SC_LEVEL1_DCACHE_SIZE))
+		  || (level == 1 && type == inst
+		      && folded_rel_name == M(_SC_LEVEL1_ICACHE_SIZE))
+		  || (level == 2 && folded_rel_name == M(_SC_LEVEL2_CACHE_SIZE))
+		  || (level == 3 && folded_rel_name == M(_SC_LEVEL3_CACHE_SIZE))
+		  || (level == 4 && folded_rel_name == M(_SC_LEVEL4_CACHE_SIZE)))
+		{
+		  unsigned int offset = M(name) - folded_rel_name;
+
+		  if (offset == 0)
+		    /* Cache size.  */
+		    return (((ebx >> 22) + 1)
+			    * (((ebx >> 12) & 0x3ff) + 1)
+			    * ((ebx & 0xfff) + 1)
+			    * (ecx + 1));
+		  if (offset == 1)
+		    return (ebx >> 22) + 1;
+
+		  assert (offset == 2);
+		  return (ebx & 0xfff) + 1;
+		}
+
+	      ++round;
+	    }
+	  /* There is no other cache information anywhere else.  */
+	  break;
 	}
       else
 	{
@@ -254,7 +305,13 @@ intel_check_word (int name, unsigned int value, bool *has_level_2,
 static long int __attribute__ ((noinline))
 handle_intel (int name, unsigned int maxidx)
 {
-  assert (maxidx >= 2);
+  if (maxidx < 2)
+    {
+      /* This should never happen as all Intel i686 CPU support a CPUID
+	 level of 2 minimum.  However valgrind sometimes load the i686
+	 library with a P55C CPUID.  Return 0 in that case. */
+      return 0;
+    }
 
   /* OK, we can use the CPUID instruction to get all info about the
      caches.  */

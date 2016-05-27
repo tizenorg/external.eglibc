@@ -120,13 +120,13 @@ static const char rcsid[] = "$BINDId: res_send.c,v 8.38 2000/03/30 20:16:51 vixi
 #define MAXPACKET       65536
 #endif
 
-
+#ifdef SOCK_NONBLOCK
 #ifndef __ASSUME_SOCK_CLOEXEC
 static int __have_o_nonblock;
 #else
 # define __have_o_nonblock 0
 #endif
-
+#endif
 
 /* From ev_streams.c.  */
 
@@ -460,7 +460,7 @@ __libc_res_nsend(res_state statp, const u_char *buf, int buflen,
 				    malloc(sizeof (struct sockaddr_in6));
 			if (EXT(statp).nsaddrs[n] != NULL) {
 				memset (mempcpy(EXT(statp).nsaddrs[n],
-						&statp->nsaddr_list[n],
+						&statp->nsaddr_list[ns],
 						sizeof (struct sockaddr_in)),
 					'\0',
 					sizeof (struct sockaddr_in6)
@@ -569,7 +569,7 @@ __libc_res_nsend(res_state statp, const u_char *buf, int buflen,
 				    ansp2_malloced);
 			if (n < 0)
 				return (-1);
-			if (n == 0)
+			if (n == 0 && (buf2 == NULL || *resplen2 == 0))
 				goto next_ns;
 		} else {
 			/* Use datagrams. */
@@ -579,7 +579,7 @@ __libc_res_nsend(res_state statp, const u_char *buf, int buflen,
 				    ansp2, nansp2, resplen2, ansp2_malloced);
 			if (n < 0)
 				return (-1);
-			if (n == 0)
+			if (n == 0 && (buf2 == NULL || *resplen2 == 0))
 				goto next_ns;
 			if (v_circuit)
 			  // XXX Check whether both requests failed or
@@ -996,6 +996,7 @@ reopen (res_state statp, int *terrno, int ns)
 
 		/* only try IPv6 if IPv6 NS and if not failed before */
 		if (nsap->sa_family == AF_INET6 && !statp->ipv6_unavail) {
+#ifdef SOCK_NONBLOCK
 			if (__builtin_expect (__have_o_nonblock >= 0, 1)) {
 				EXT(statp).nssocks[ns] =
 				  socket(PF_INET6, SOCK_DGRAM|SOCK_NONBLOCK,
@@ -1008,12 +1009,14 @@ reopen (res_state statp, int *terrno, int ns)
 #endif
 			}
 			if (__builtin_expect (__have_o_nonblock < 0, 0))
+#endif
 				EXT(statp).nssocks[ns] =
 				  socket(PF_INET6, SOCK_DGRAM, 0);
 			if (EXT(statp).nssocks[ns] < 0)
 			    statp->ipv6_unavail = errno == EAFNOSUPPORT;
 			slen = sizeof (struct sockaddr_in6);
 		} else if (nsap->sa_family == AF_INET) {
+#ifdef SOCK_NONBLOCK
 			if (__builtin_expect (__have_o_nonblock >= 0, 1)) {
 				EXT(statp).nssocks[ns]
 				  = socket(PF_INET, SOCK_DGRAM|SOCK_NONBLOCK,
@@ -1026,6 +1029,7 @@ reopen (res_state statp, int *terrno, int ns)
 #endif
 			}
 			if (__builtin_expect (__have_o_nonblock < 0, 0))
+#endif
 				EXT(statp).nssocks[ns]
 				  = socket(PF_INET, SOCK_DGRAM, 0);
 			slen = sizeof (struct sockaddr_in);
@@ -1052,7 +1056,11 @@ reopen (res_state statp, int *terrno, int ns)
 			__res_iclose(statp, false);
 			return (0);
 		}
+#ifdef SOCK_NONBLOCK
 		if (__builtin_expect (__have_o_nonblock < 0, 0)) {
+#else
+                {
+#endif
 			/* Make socket non-blocking.  */
 			int fl = __fcntl (EXT(statp).nssocks[ns], F_GETFL);
 			if  (fl != -1)
@@ -1305,7 +1313,7 @@ send_dg(res_state statp,
 		   MSG_TRUNC which is only available on Linux.  We
 		   can abstract out the Linux-specific feature in the
 		   future to detect truncation.  */
-		if (__builtin_expect (*thisanssizp < *thisresplenp, 0)) {
+		if (__glibc_unlikely (*thisanssizp < *thisresplenp)) {
 			Dprint(statp->options & RES_DEBUG,
 			       (stdout, ";; response may be truncated (UDP)\n")
 			);
@@ -1417,10 +1425,14 @@ send_dg(res_state statp,
 				(*thisresplenp > *thisanssizp)
 				? *thisanssizp : *thisresplenp);
 
-			if (recvresp1 || (buf2 != NULL && recvresp2))
+			if (recvresp1 || (buf2 != NULL && recvresp2)) {
+			  *resplen2 = 0;
 			  return resplen;
+			}
 			if (buf2 != NULL)
 			  {
+			    /* No data from the first reply.  */
+			    resplen = 0;
 			    /* We are waiting for a possible second reply.  */
 			    if (hp->id == anhp->id)
 			      recvresp1 = 1;
@@ -1472,6 +1484,7 @@ send_dg(res_state statp,
 					retval = reopen (statp, terrno, ns);
 					if (retval <= 0)
 						return retval;
+					pfd[0].fd = EXT(statp).nssocks[ns];
 				}
 			}
 			goto wait;
@@ -1486,7 +1499,7 @@ send_dg(res_state statp,
 		goto err_out;
 	}
 	else {
-	  	/* poll should not have returned > 0 in this case.  */
+		/* poll should not have returned > 0 in this case.  */
 		abort ();
 	}
 }

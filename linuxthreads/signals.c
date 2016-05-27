@@ -99,9 +99,11 @@ int __pthread_sigaction(int sig, const struct sigaction * act,
       if (act->sa_handler != SIG_IGN && act->sa_handler != SIG_DFL
 	  && sig > 0 && sig < NSIG)
 	{
+#if !defined(__FreeBSD_kernel__)
 	  if (act->sa_flags & SA_SIGINFO)
 	    newact.sa_handler = (__sighandler_t) __pthread_sighandler_rt;
 	  else
+#endif	  
 	    newact.sa_handler = (__sighandler_t) __pthread_sighandler;
 	  if (old == SIG_IGN || old == SIG_DFL || old == SIG_ERR)
 	    __sighandler[sig].old = (arch_sighandler_t) act->sa_handler;

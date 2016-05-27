@@ -24,6 +24,7 @@
    you know what you are doing.  */
 
 #include <bits/wordsize.h>
+#include <unistd.h>
 
 #if __WORDSIZE == 64
 
@@ -164,8 +165,7 @@ struct user
 };
 #endif  /* __WORDSIZE */
 
-#define PAGE_SHIFT		12
-#define PAGE_SIZE		(1UL << PAGE_SHIFT)
+#define PAGE_SIZE		(sysconf(_SC_PAGESIZE))
 #define PAGE_MASK		(~(PAGE_SIZE-1))
 #define NBPG			PAGE_SIZE
 #define UPAGES			1

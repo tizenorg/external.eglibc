@@ -20,6 +20,7 @@
 /* This file defines some things that for the dynamic linker are defined in
    rtld.c and dl-sysdep.c in ways appropriate to bootstrap dynamic linking.  */
 
+#include <gnu/option-groups.h>
 #include <errno.h>
 #include <libintl.h>
 #include <stdlib.h>
@@ -46,7 +47,13 @@ int _dl_debug_mask;
 #endif
 int _dl_lazy;
 ElfW(Addr) _dl_use_load_bias = -2;
+#ifdef __GNU__
+/* GNU/Hurd needs this because otherwise libpthread's pthread_mutex_lock gets
+ * overridden by libX11's stubs.  */
+int _dl_dynamic_weak = 1;
+#else
 int _dl_dynamic_weak;
+#endif
 
 /* If nonzero print warnings about problematic situations.  */
 int _dl_verbose;

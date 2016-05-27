@@ -3874,6 +3874,21 @@ public_mEMALIGn(size_t alignment, size_t bytes)
   /* Otherwise, ensure that it is at least a minimum chunk size */
   if (alignment <  MINSIZE) alignment = MINSIZE;
 
+  /* If the alignment is greater than SIZE_MAX / 2 + 1 it cannot be a
+     power of 2 and will cause overflow in the check below.  */
+  if (alignment > SIZE_MAX / 2 + 1)
+    {
+      __set_errno (EINVAL);
+      return 0;
+    }
+
+  /* Check for overflow.  */
+  if (bytes > SIZE_MAX - alignment - MINSIZE)
+    {
+      __set_errno (ENOMEM);
+      return 0;
+    }
+
   arena_get(ar_ptr, bytes + alignment + MINSIZE);
   if(!ar_ptr)
     return 0;
@@ -3918,6 +3933,13 @@ public_vALLOc(size_t bytes)
     ptmalloc_init ();
 
   size_t pagesz = mp_.pagesize;
+
+  /* Check for overflow.  */
+  if (bytes > SIZE_MAX - pagesz - MINSIZE)
+    {
+      __set_errno (ENOMEM);
+      return 0;
+    }
 
   __malloc_ptr_t (*hook) __MALLOC_PMT ((size_t, size_t,
 					__const __malloc_ptr_t)) =
@@ -3966,6 +3988,13 @@ public_pVALLOc(size_t bytes)
   size_t pagesz = mp_.pagesize;
   size_t page_mask = mp_.pagesize - 1;
   size_t rounded_bytes = (bytes + page_mask) & ~(page_mask);
+
+  /* Check for overflow.  */
+  if (bytes > SIZE_MAX - 2*pagesz - MINSIZE)
+    {
+      __set_errno (ENOMEM);
+      return 0;
+    }
 
   __malloc_ptr_t (*hook) __MALLOC_PMT ((size_t, size_t,
 					__const __malloc_ptr_t)) =

@@ -282,6 +282,8 @@ init (void)
 
 	  sevlevel_var = end + (*end == ':' ? 1 : 0);
 	}
+
+      __libc_lock_unlock (lock);
     }
 }
 

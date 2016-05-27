@@ -30,5 +30,5 @@ madvise (__ptr_t addr, size_t len, int advice)
   return -1;
 }
 libc_hidden_def (madvise)
-stub_warning (madvise)
-#include <stub-tag.h>
+/* stub_warning (madvise)
+#include <stub-tag.h> */

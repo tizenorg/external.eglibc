@@ -22,6 +22,7 @@
 #include <sysdep.h>
 #include <lowlevellock.h>
 #include <sys/time.h>
+#include <tls.h>		/* Need THREAD_*, and header.*.  */
 
 void
 __lll_lock_wait (lll_lock_t *futex, int private)

@@ -279,9 +279,9 @@ tests-$(OPTION_EGLIBC_LOCALE_CODE) += tst-locale1
 # Files which must not be linked with libpthread.
 tests-nolibpthread = tst-unload
 
-# This sets the stack resource limit to 1023kb, which is not a multiple
-# of the page size since every architecture's page size is > 1k.
-tst-oddstacklimit-ENV = ; ulimit -s 1023;
+# This sets the stack resource limit to 8193kb, which is not a multiple
+# of the page size since every architecture's page size is 4096 bytes.
+tst-oddstacklimit-ENV = ; ulimit -s 8193;
 
 distribute = eintr.c tst-cleanup4aux.c
 
@@ -445,6 +445,35 @@ CFLAGS-tst-cleanupx3.c += -fexceptions
 CFLAGS-tst-cleanupx4.c += -fexceptions
 CFLAGS-tst-oncex3.c += -fexceptions
 CFLAGS-tst-oncex4.c += -fexceptions
+
+ldflags-libgcc_s = -Wl,--as-needed -lgcc_s -Wl,--no-as-needed
+LDFLAGS-tst-cancelx2 += $(ldflags-libgcc_s)
+LDFLAGS-tst-cancelx3 += $(ldflags-libgcc_s)
+LDFLAGS-tst-cancelx4 += $(ldflags-libgcc_s)
+LDFLAGS-tst-cancelx5 += $(ldflags-libgcc_s)
+LDFLAGS-tst-cancelx6 += $(ldflags-libgcc_s)
+LDFLAGS-tst-cancelx7 += $(ldflags-libgcc_s)
+LDFLAGS-tst-cancelx8 += $(ldflags-libgcc_s)
+LDFLAGS-tst-cancelx9 += $(ldflags-libgcc_s)
+LDFLAGS-tst-cancelx10 += $(ldflags-libgcc_s)
+LDFLAGS-tst-cancelx11 += $(ldflags-libgcc_s)
+LDFLAGS-tst-cancelx12 += $(ldflags-libgcc_s)
+LDFLAGS-tst-cancelx13 += $(ldflags-libgcc_s)
+LDFLAGS-tst-cancelx14 += $(ldflags-libgcc_s)
+LDFLAGS-tst-cancelx15 += $(ldflags-libgcc_s)
+LDFLAGS-tst-cancelx16 += $(ldflags-libgcc_s)
+LDFLAGS-tst-cancelx17 += $(ldflags-libgcc_s)
+LDFLAGS-tst-cancelx18 += $(ldflags-libgcc_s)
+LDFLAGS-tst-cancelx20 += $(ldflags-libgcc_s)
+LDFLAGS-tst-cancelx21 += $(ldflags-libgcc_s)
+LDFLAGS-tst-cleanupx0 += $(ldflags-libgcc_s)
+LDFLAGS-tst-cleanupx1 += $(ldflags-libgcc_s)
+LDFLAGS-tst-cleanupx2 += $(ldflags-libgcc_s)
+LDFLAGS-tst-cleanupx3 += $(ldflags-libgcc_s)
+LDFLAGS-tst-cleanupx4 += $(ldflags-libgcc_s)
+LDFLAGS-tst-oncex3 += $(ldflags-libgcc_s)
+LDFLAGS-tst-oncex4 += $(ldflags-libgcc_s)
+
 CFLAGS-tst-align.c += $(stack-align-test-flags)
 CFLAGS-tst-align3.c += $(stack-align-test-flags)
 CFLAGS-tst-initializers1.c = -W -Wall -Werror

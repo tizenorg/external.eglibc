@@ -21,6 +21,9 @@
 #define _BITS_LIBC_LOCK_H 1
 
 #if (_LIBC - 0) || (_CTHREADS_ - 0)
+#if (_LIBC - 0)
+#include <tls.h>
+#endif
 #include <cthreads.h>
 #include <hurd/threadvar.h>
 
@@ -187,6 +190,10 @@ struct __libc_once
     ONCE_CONTROL.done = 1;						      \
     __libc_lock_unlock (ONCE_CONTROL.lock);				      \
   } while (0)
+
+/* Get once control variable.  */
+#define __libc_once_get(ONCE_CONTROL) \
+  (!ONCE_CONTROL.done)
 
 #ifdef _LIBC
 /* We need portable names for some functions.  E.g., when they are

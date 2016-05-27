@@ -70,7 +70,8 @@
 /* If there is a DT_MIPS_RLD_MAP entry in the dynamic section, fill it in
    with the run-time address of the r_debug structure  */
 #define ELF_MACHINE_DEBUG_SETUP(l,r) \
-do { if ((l)->l_info[DT_MIPS (RLD_MAP)]) \
+do { if ((l)->l_info[DT_MIPS (RLD_MAP)] && \
+	 (l)->l_info[DT_MIPS (RLD_MAP)]->d_un.d_ptr) \
        *(ElfW(Addr) *)((l)->l_info[DT_MIPS (RLD_MAP)]->d_un.d_ptr) = \
        (ElfW(Addr)) (r); \
    } while (0)
@@ -295,6 +296,18 @@ do {									\
 #  define ARCH_LA_PLTENTER mips_n64_gnu_pltenter
 #  define ARCH_LA_PLTEXIT mips_n64_gnu_pltexit
 # endif
+
+/* We define an initialization function.  This is called very early in
+   _dl_sysdep_start.  */
+#define DL_PLATFORM_INIT dl_platform_init ()
+
+static inline void __attribute__ ((unused))
+dl_platform_init (void)
+{
+  if (GLRO(dl_platform) != NULL && *GLRO(dl_platform) == '\0')
+    /* Avoid an empty string which would disturb us.  */
+    GLRO(dl_platform) = NULL;
+}
 
 /* For a non-writable PLT, rewrite the .got.plt entry at RELOC_ADDR to
    point at the symbol with address VALUE.  For a writable PLT, rewrite

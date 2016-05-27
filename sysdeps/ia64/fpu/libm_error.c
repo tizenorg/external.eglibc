@@ -708,14 +708,17 @@ switch(input_tag)
   case gammal_negative:
   case gamma_negative:
   case gammaf_negative:
-  case lgammal_negative:
-  case lgamma_negative:
-  case lgammaf_negative:
   case tgammal_negative:
   case tgamma_negative:
   case tgammaf_negative:
   {
        ERRNO_DOMAIN; break;
+  }
+  case lgammal_negative:
+  case lgamma_negative:
+  case lgammaf_negative:
+  {
+       ERRNO_RANGE; break;
   }
   case ldexpl_overflow:
   case ldexpl_underflow:
@@ -1081,17 +1084,17 @@ switch(input_tag)
   case powl_zero_to_negative:
     /* 0**neg */
     {
-       ERRNO_DOMAIN; break;
+       ERRNO_RANGE; break;
     }
   case pow_zero_to_negative:
     /* 0**neg */
     {
-       ERRNO_DOMAIN; break;
+       ERRNO_RANGE; break;
     }
   case  powf_zero_to_negative:
     /* 0**neg */
     {
-       ERRNO_DOMAIN; break;
+       ERRNO_RANGE; break;
     }
   case powl_neg_to_non_integer:
     /* neg**non_integral */
@@ -1307,6 +1310,21 @@ switch(input_tag)
     {
        ERRNO_DOMAIN; break;
     }
+  case fmodl_infinity:
+    /* fmodl(inf,y) */
+    {
+       ERRNO_DOMAIN; break;
+    }
+  case fmod_infinity:
+    /* fmod(inf,y) */
+    {
+       ERRNO_DOMAIN; break;
+    }
+  case fmodf_infinity:
+    /* fmodf(inf,y) */
+    {
+       ERRNO_DOMAIN; break;
+    }
   case coshl_overflow:
     /* coshl overflows */
     {
@@ -1373,6 +1391,51 @@ switch(input_tag)
    {
       ERRNO_RANGE; break;
    }
+  case cosl_infinity:
+    /* cosl(inf) */
+    {
+       ERRNO_DOMAIN; break;
+    }
+  case cos_infinity:
+    /* cos(inf) */
+    {
+       ERRNO_DOMAIN; break;
+    }
+  case cosf_infinity:
+    /* cosf(inf) */
+    {
+       ERRNO_DOMAIN; break;
+    }
+  case sinl_infinity:
+    /* sinl(inf) */
+    {
+       ERRNO_DOMAIN; break;
+    }
+  case sin_infinity:
+    /* sin(inf) */
+    {
+       ERRNO_DOMAIN; break;
+    }
+  case sinf_infinity:
+    /* sinf(inf) */
+    {
+       ERRNO_DOMAIN; break;
+    }
+  case tanl_infinity:
+    /* tanl(inf) */
+    {
+       ERRNO_DOMAIN; break;
+    }
+  case tan_infinity:
+    /* tan(inf) */
+    {
+       ERRNO_DOMAIN; break;
+    }
+  case tanf_infinity:
+    /* tanf(inf) */
+    {
+       ERRNO_DOMAIN; break;
+    }
   default:
     break;
 }

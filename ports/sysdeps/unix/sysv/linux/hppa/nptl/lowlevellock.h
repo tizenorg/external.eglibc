@@ -22,10 +22,8 @@
 #include <time.h>
 #include <sys/param.h>
 #include <bits/pthreadtypes.h>
-#include <sysdep.h>
 #include <atomic.h>
 #include <kernel-features.h>	/* Need __ASSUME_PRIVATE_FUTEX.  */
-#include <tls.h>		/* Need THREAD_*, and header.*.  */
 
 /* HPPA only has one atomic read and modify memory operation,
    load and clear, so hppa uses a kernel helper routine to implement
@@ -290,18 +288,20 @@ __lll_robust_timedlock (int *futex, const struct timespec *abstime,
   __lll_robust_timedlock (&(futex), abstime, id, private)
 
 #define __lll_unlock(futex, private) \
-  (void)					\
-  ({ int val = atomic_exchange_rel (futex, 0);  \
-     if (__builtin_expect (val > 1, 0))         \
-       lll_futex_wake (futex, 1, private);      \
+  (void)						\
+  ({ int *__futex = (futex);				\
+     int val = atomic_exchange_rel (__futex, 0);	\
+     if (__builtin_expect (val > 1, 0))			\
+       lll_futex_wake (__futex, 1, private);		\
   })
 #define lll_unlock(futex, private) __lll_unlock(&(futex), private)
 
 #define  __lll_robust_unlock(futex,private) \
-  (void)                                               \
-    ({ int val = atomic_exchange_rel (futex, 0);       \
-       if (__builtin_expect (val & FUTEX_WAITERS, 0))  \
-         lll_futex_wake (futex, 1, private);           \
+  (void)						\
+    ({ int *__futex = (futex);				\
+       int val = atomic_exchange_rel (__futex, 0);	\
+       if (__builtin_expect (val & FUTEX_WAITERS, 0))	\
+         lll_futex_wake (__futex, 1, private);		\
     })
 #define lll_robust_unlock(futex, private) \
   __lll_robust_unlock(&(futex), private)

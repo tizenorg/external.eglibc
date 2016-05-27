@@ -100,7 +100,13 @@ enum __rlimit_resource
   __RLIMIT_RTPRIO = 14,
 #define RLIMIT_RTPRIO __RLIMIT_RTPRIO
 
-  __RLIMIT_NLIMITS = 15,
+  /* Maximum CPU time that a process scheduled under a real-time
+     scheduling policy may consume without making a blocking
+     system call.  */
+  __RLIMIT_RTTIME = 15,
+#define RLIMIT_RTTIME __RLIMIT_RTTIME
+
+  __RLIMIT_NLIMITS = 16,
   __RLIM_NLIMITS = __RLIMIT_NLIMITS
 #define RLIMIT_NLIMITS __RLIMIT_NLIMITS
 #define RLIM_NLIMITS __RLIM_NLIMITS
@@ -124,11 +130,11 @@ enum __rlimit_resource
 #ifndef __USE_FILE_OFFSET64
 # define RLIM_INFINITY ((long int)(~0UL >> 1))
 #else
-# define RLIM_INFINITY 0x7fffffffffffffffLL
+# define RLIM_INFINITY 0xffffffffffffffffLL
 #endif
 
 #ifdef __USE_LARGEFILE64
-# define RLIM64_INFINITY 0x7fffffffffffffffLL
+# define RLIM64_INFINITY 0xffffffffffffffffLL
 #endif
 
 #endif

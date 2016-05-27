@@ -263,8 +263,8 @@ __addmntent (FILE *stream, const struct mntent *mnt)
 		   mntcopy.mnt_type,
 		   mntcopy.mnt_opts,
 		   mntcopy.mnt_freq,
-		   mntcopy.mnt_passno)
-	  < 0 ? 1 : 0);
+		   mntcopy.mnt_passno) < 0
+	  || fflush (stream) != 0);
 }
 weak_alias (__addmntent, addmntent)
 

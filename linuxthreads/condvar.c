@@ -31,6 +31,7 @@ int __pthread_cond_init(pthread_cond_t *cond,
 {
   __pthread_init_lock(&cond->__c_lock);
   cond->__c_waiting = NULL;
+  cond->__clock_id = cond_attr ? cond_attr->__clock_id : CLOCK_REALTIME;
   return 0;
 }
 versioned_symbol (libpthread, __pthread_cond_init, pthread_cond_init,
@@ -198,7 +199,7 @@ pthread_cond_timedwait_relative(pthread_cond_t *cond,
   spurious_wakeup_count = 0;
   while (1)
     {
-      if (!timedsuspend(self, abstime)) {
+      if (!__pthread_timedsuspend_new_clk(self, abstime, cond->__clock_id)) {
 	int was_on_queue;
 
 	/* __pthread_lock will queue back any spurious restarts that
@@ -312,6 +313,7 @@ compat_symbol (libpthread, __old_pthread_cond_broadcast,
 
 int __pthread_condattr_init(pthread_condattr_t *attr)
 {
+  attr->__clock_id = CLOCK_REALTIME;
   return 0;
 }
 strong_alias (__pthread_condattr_init, pthread_condattr_init)

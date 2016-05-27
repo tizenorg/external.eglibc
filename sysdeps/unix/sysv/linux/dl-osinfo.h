@@ -17,10 +17,13 @@
    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307 USA.  */
 
+#include <errno.h>
 #include <kernel-features.h>
 #include <dl-sysdep.h>
 #include <fcntl.h>
 #include <stdint.h>
+#include <hp-timing.h>
+#include <endian.h>
 
 #ifndef MIN
 # define MIN(a,b) (((a)<(b))?(a):(b))
@@ -62,7 +65,12 @@ dl_fatal (const char *str)
 static inline uintptr_t __attribute__ ((always_inline))
 _dl_setup_stack_chk_guard (void *dl_random)
 {
-  uintptr_t ret;
+  uintptr_t ret = 0;
+  /* Having a leading zero byte protects the stack guard from being
+     overwritten with str* write operations or exposed by an
+     unterminated str* read operation. */
+  unsigned char *p = ((unsigned char *) &ret) + 1;
+  int size = sizeof (ret) - 1;
 #ifndef __ASSUME_AT_RANDOM
   if (__builtin_expect (dl_random == NULL, 0))
     {
@@ -70,23 +78,49 @@ _dl_setup_stack_chk_guard (void *dl_random)
       int fd = __open ("/dev/urandom", O_RDONLY);
       if (fd >= 0)
 	{
-	  ssize_t reslen = __read (fd, &ret, sizeof (ret));
+	  ssize_t reslen = __read (fd, p, size);
 	  __close (fd);
-	  if (reslen == (ssize_t) sizeof (ret))
+	  if (reslen == (ssize_t) size)
 	    return ret;
 	}
 # endif
-      ret = 0;
-      unsigned char *p = (unsigned char *) &ret;
-      p[sizeof (ret) - 1] = 255;
-      p[sizeof (ret) - 2] = '\n';
+      /* Lacking any other form of randomized stack guard, add other
+         terminators in an attempt to block things like fgets, etc. */
+      p[size - 1] = 255;
+      p[size - 2] = '\n';
+#ifdef HP_TIMING_NOW
+      hp_timing_t hpt;
+      HP_TIMING_NOW (hpt);
+      hpt = (hpt & 0xffff) << 8;
+      ret ^= hpt;
+#endif
+      uintptr_t stk;
+      /* Avoid GCC being too smart.  */
+      asm ("" : "=r" (stk) : "r" (p));
+      stk &= 0x7ffff0;
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+      stk <<= (__WORDSIZE - 23);
+#elif __WORDSIZE == 64
+      stk <<= 31;
+#endif
+      ret ^= stk;
+      /* Avoid GCC being too smart.  */
+      p = (unsigned char *) &errno;
+      asm ("" : "=r" (stk) : "r" (p));
+      stk &= 0x7fff00;
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+      stk <<= (__WORDSIZE - 29);
+#else
+      stk >>= 8;
+#endif
+      ret ^= stk;
     }
   else
 #endif
     /* We need in the moment only 8 bytes on 32-bit platforms and 16
        bytes on 64-bit platforms.  Therefore we can use the data
        directly and not use the kernel-provided data to seed a PRNG.  */
-    memcpy (&ret, dl_random, sizeof (ret));
+    memcpy (p, dl_random, size);
   return ret;
 }
 

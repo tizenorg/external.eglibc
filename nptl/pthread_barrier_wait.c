@@ -64,7 +64,7 @@ pthread_barrier_wait (barrier)
       do
 	lll_futex_wait (&ibarrier->curr_event, event,
 			ibarrier->private ^ FUTEX_PRIVATE_FLAG);
-      while (event == ibarrier->curr_event);
+      while (event == *(volatile unsigned int *)&ibarrier->curr_event);
     }
 
   /* Make sure the init_count is stored locally or in a register.  */

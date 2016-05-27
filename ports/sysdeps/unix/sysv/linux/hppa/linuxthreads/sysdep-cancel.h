@@ -240,3 +240,10 @@ L(stp):								ASM_LINE_SEP
 
 #endif
 /* !defined NOT_IN_libc || defined IS_IN_libpthread */
+
+#ifndef __ASSEMBLER__
+# define RTLD_SINGLE_THREAD_P \
+  __builtin_expect (THREAD_GETMEM (THREAD_SELF, \
+				   p_multiple_threads) == 0, 1)
+#endif
+

@@ -63,6 +63,8 @@
 
 #else /* Not NDEBUG.  */
 
+#ifndef _ASSERT_H_DECLS
+#define _ASSERT_H_DECLS
 __BEGIN_DECLS
 
 /* This prints an "Assertion failed" message and aborts.  */
@@ -84,6 +86,7 @@ extern void __assert (const char *__assertion, const char *__file, int __line)
 
 
 __END_DECLS
+#endif /* Not _ASSERT_H_DECLS */
 
 # define assert(expr)							\
   ((expr)								\

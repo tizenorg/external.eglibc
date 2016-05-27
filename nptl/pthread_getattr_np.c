@@ -61,7 +61,11 @@ pthread_getattr_np (thread_id, attr)
   if (__builtin_expect (thread->stackblock != NULL, 1))
     {
       iattr->stacksize = thread->stackblock_size;
+#ifdef _STACK_GROWS_DOWN
       iattr->stackaddr = (char *) thread->stackblock + iattr->stacksize;
+#else
+      iattr->stackaddr = (char *) thread->stackblock;
+#endif
     }
   else
     {
@@ -110,13 +114,21 @@ pthread_getattr_np (thread_id, attr)
 		    {
 		      /* Found the entry.  Now we have the info we need.  */
 		      iattr->stacksize = rl.rlim_cur;
+#ifdef _STACK_GROWS_DOWN
 		      iattr->stackaddr = (void *) to;
 
 		      /* The limit might be too high.  */
 		      if ((size_t) iattr->stacksize
 			  > (size_t) iattr->stackaddr - last_to)
 			iattr->stacksize = (size_t) iattr->stackaddr - last_to;
+#else
+		      iattr->stackaddr = (void *) from;
 
+		      /* The limit might be too high.  */
+		      if ((size_t) iattr->stacksize
+			  > to - (size_t) iattr->stackaddr)
+			iattr->stacksize = to - (size_t) iattr->stackaddr;
+#endif
 		      /* We succeed and no need to look further.  */
 		      ret = 0;
 		      break;

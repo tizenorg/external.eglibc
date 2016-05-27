@@ -46,12 +46,14 @@
 #define O_ASYNC		 020000
 #define O_BLKSEEK	00000100 /* HPUX only */
 
-#ifdef __USE_GNU
-# define O_DIRECT	000040000 /* Direct disk access.  */
+#ifdef __USE_XOPEN2K8
 # define O_DIRECTORY	000010000 /* Must be a directory.  */
 # define O_NOFOLLOW	000000200 /* Do not follow links.  */
-# define O_NOATIME	004000000 /* Do not set atime.  */
 # define O_CLOEXEC	010000000 /* Set close_on_exec.  */
+#endif
+#ifdef __USE_GNU
+# define O_DIRECT	000040000 /* Direct disk access.  */
+# define O_NOATIME	004000000 /* Do not set atime.  */
 #endif
 
 /* For now Linux has synchronisity options for data and read operations.
@@ -85,7 +87,7 @@
 #define F_SETLK64	9	/* Set record locking info (non-blocking).  */
 #define F_SETLKW64	10	/* Set record locking info (blocking).  */
 
-#if defined __USE_BSD || defined __USE_UNIX98
+#if defined __USE_BSD || defined __USE_UNIX98 || defined __USE_XOPEN2K8
 # define F_GETOWN	11	/* Get owner of socket (receiver of SIGIO).  */
 # define F_SETOWN	12	/* Set owner of socket (receiver of SIGIO).  */
 #endif
@@ -101,6 +103,10 @@
 # define F_SETLEASE	1024	/* Set a lease.	 */
 # define F_GETLEASE	1025	/* Enquire what lease is active.  */
 # define F_NOTIFY	1026	/* Request notfications on a directory.	 */
+# define F_SETPIPE_SZ	1031	/* Set pipe page size array.  */
+# define F_GETPIPE_SZ	1032	/* Set pipe page size array.  */
+#endif
+#ifdef __USE_XOPEN2K8
 # define F_DUPFD_CLOEXEC 1030	/* Duplicate file descriptor with
 				   close-on-exit set.  */
 #endif
@@ -227,6 +233,21 @@ struct f_owner_ex
 					   we splice from/to).  */
 # define SPLICE_F_MORE		4	/* Expect more data.  */
 # define SPLICE_F_GIFT		8	/* Pages passed in are a gift.  */
+#endif
+
+/* Values for `*at' functions.  */
+#ifdef __USE_ATFILE
+# define AT_FDCWD		-100	/* Special value used to indicate
+					   the *at functions should use the
+					   current working directory. */
+# define AT_SYMLINK_NOFOLLOW	0x100	/* Do not follow symbolic links.  */
+# define AT_REMOVEDIR		0x200	/* Remove directory instead of
+					   unlinking file.  */
+# define AT_SYMLINK_FOLLOW	0x400	/* Follow symbolic links.  */
+# define AT_NO_AUTOMOUNT	0x800	/* Suppress terminal automount
+					   traversal.  */
+# define AT_EACCESS		0x200	/* Test access permitted for
+					   effective IDs, not real IDs.  */
 #endif
 
 __BEGIN_DECLS

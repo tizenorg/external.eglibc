@@ -74,7 +74,7 @@ typedef uintmax_t uatomic_max_t;
      "bne	%0,%3,2f\n\t"						      \
      "move	%1,%4\n\t"						      \
      "sc	%1,%2\n\t"						      \
-     "beqz	%1,1b\n"						      \
+     "beqzl	%1,1b\n"						      \
      acq	"\n\t"							      \
      ".set	pop\n"							      \
      "2:\n\t"								      \
@@ -98,7 +98,7 @@ typedef uintmax_t uatomic_max_t;
      "bne	%0,%3,2f\n\t"						      \
      "move	%1,%4\n\t"						      \
      "scd	%1,%2\n\t"						      \
-     "beqz	%1,1b\n"						      \
+     "beqzl	%1,1b\n"						      \
      acq	"\n\t"							      \
      ".set	pop\n"							      \
      "2:\n\t"								      \
@@ -192,7 +192,7 @@ typedef uintmax_t uatomic_max_t;
      "ll	%0,%4\n\t"						      \
      "move	%1,%3\n\t"						      \
      "sc	%1,%2\n\t"						      \
-     "beqz	%1,1b\n"						      \
+     "beqzl	%1,1b\n"						      \
      acq	"\n\t"							      \
      ".set	pop\n"							      \
      "2:\n\t"								      \
@@ -216,7 +216,7 @@ typedef uintmax_t uatomic_max_t;
      "lld	%0,%4\n\t"						      \
      "move	%1,%3\n\t"						      \
      "scd	%1,%2\n\t"						      \
-     "beqz	%1,1b\n"						      \
+     "beqzl	%1,1b\n"						      \
      acq	"\n\t"							      \
      ".set	pop\n"							      \
      "2:\n\t"								      \
@@ -251,7 +251,7 @@ typedef uintmax_t uatomic_max_t;
      "ll	%0,%4\n\t"						      \
      "addu	%1,%0,%3\n\t"						      \
      "sc	%1,%2\n\t"						      \
-     "beqz	%1,1b\n"						      \
+     "beqzl	%1,1b\n"						      \
      acq	"\n\t"							      \
      ".set	pop\n"							      \
      "2:\n\t"								      \
@@ -275,7 +275,7 @@ typedef uintmax_t uatomic_max_t;
      "lld	%0,%4\n\t"						      \
      "daddu	%1,%0,%3\n\t"						      \
      "scd	%1,%2\n\t"						      \
-     "beqz	%1,1b\n"						      \
+     "beqzl	%1,1b\n"						      \
      acq	"\n\t"							      \
      ".set	pop\n"							      \
      "2:\n\t"								      \

@@ -1,3 +1,46 @@
+2011-05-30  Ulrich Drepper  <drepper@gmail.com>
+
+	[BZ #12454]
+	* elf/dl-deps.c (_dl_map_object_deps): Run initializer sorting only
+	when there are multiple maps.
+	* elf/dl-fini.c (_dl_sort_fini): Check for list of one.
+	(_dl_fini): Remove test here.
+
+	* elf/rtld.c (dl_main): Don't allow the loader to load itself.
+
+2011-02-06  Mike Frysinger  <vapier@gentoo.org>
+
+	[BZ #12653]
+	* sysdeps/i386/i686/multiarch/memcpy-ssse3-rep.S: Only protect
+	MEMCPY_CHK with USE_AS_BCOPY ifdef check.
+	* sysdeps/i386/i686/multiarch/memcpy-ssse3.S: Likewise.
+	* sysdeps/x86_64/multiarch/memcpy-ssse3.S: Likewise.
+	* sysdeps/x86_64/multiarch/memcpy-ssse3-back.S: Likewise.
+
+2010-09-28  Andreas Schwab  <schwab@redhat.com>
+	    Ulrich Drepper  <drepper@gmail.com>
+
+	[BZ #12489]
+	* elf/rtld.c (dl_main): Move setting of GLRO(dl_init_all_dirs)
+	before performing relro protection.  At old place add assertion
+	to make sure nothing changed.
+
+2011-02-16  Ryan S. Arnold  <rsa@us.ibm.com>
+
+	* sysdeps/unix/sysv/linux/powerpc/powerpc64/sysdep.h:
+	(INTERNAL_VSYSCALL_NCS INTERNAL_SYSCALL_NCS): Remove erroneous (int)
+	cast from r3.
+	* sysdeps/wordsize-64/Makefile: New file.  Add tst-writev to
+	'tests' variable.
+	* sysdeps/wordsize-64/tst-writev.c: New file.
+
+2011-02-15  Ryan S. Arnold  <rsa@us.ibm.com>
+
+	* sysdeps/powerpc/powerpc64/power7/Makefile: New file which adds
+	-mno-vsx to the CFLAGS-rtld.c variable to avoid using VSX registers and
+	insns in _dl_start to prevent a TOC reference before relocs are
+	resolved.
+
 2011-02-02  Ulrich Drepper  <drepper@gmail.com>
 
 	* elf/dl-runtime.c (_dl_call_pltexit): Pass correct address of the

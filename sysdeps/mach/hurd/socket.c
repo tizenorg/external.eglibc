@@ -57,7 +57,7 @@ __socket (domain, type, protocol)
      isn't supported.  */
   if (err == MACH_SEND_INVALID_DEST || err == MIG_SERVER_DIED
       || err == MIG_BAD_ID || err == EOPNOTSUPP)
-    err = EPFNOSUPPORT;
+    err = EAFNOSUPPORT;
 
   if (err)
     return __hurd_fail (err);

@@ -73,7 +73,7 @@ LC_MONETARY
 % for IBM Class for Unicode.
 %
 int_curr_symbol       "<U0049><U004E><U0052><U0020>"
-currency_symbol       "<U0C30><U0C42><U002E>"
+currency_symbol       "<U20B9>"
 mon_decimal_point     "<U002E>"
 mon_thousands_sep     "<U002C>"
 mon_grouping          3;2
@@ -156,6 +156,8 @@ t_fmt       "<U0025><U0070><U0025><U0049><U002E><U0025><U004D><U002E><U0025><U00
 % %p%I.%M.%S %Z
 t_fmt_ampm  "<U0025><U0070><U0025><U0049><U002E><U0025><U004D><U002E><U0025><U0053><U0020><U0025><U005A>"
 %
+%  FIXME: found in CLDR
+first_weekday 1
 END LC_TIME
 
 

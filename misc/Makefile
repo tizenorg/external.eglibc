@@ -86,7 +86,7 @@ endif
 gpl2lgpl := error.c error.h
 
 tests := tst-dirname tst-tsearch tst-fdset tst-mntent tst-hsearch \
-	 tst-pselect tst-insremque tst-mntent2 bug-hsearch1
+	 tst-pselect tst-insremque tst-mntent2 bug-hsearch1 bug18240
 tests-$(OPTION_POSIX_WIDE_CHAR_DEVICE_IO) += tst-error1
 tests-$(OPTION_EGLIBC_FCVT) += tst-efgcvt
 # eglibc: ifeq (no,$(cross-compiling))

@@ -79,6 +79,8 @@ char *__canonicalize_directory_name_internal (__const char *__thisdir,
 extern int __dup (int __fd);
 extern int __dup2 (int __fd, int __fd2);
 libc_hidden_proto (__dup2)
+extern int __dup3 (int __fd, int __fd2, int flags);
+libc_hidden_proto (__dup3)
 extern int __execve (__const char *__path, char *__const __argv[],
 		     char *__const __envp[]);
 extern long int __pathconf (__const char *__path, int __name);
@@ -171,10 +173,7 @@ extern int __libc_pause (void);
 extern int __pause_nocancel (void) attribute_hidden;
 
 extern int __have_sock_cloexec;
-/* At lot of other functionality became available at the same time as
-   SOCK_CLOEXEC.  Avoid defining separate variables for all of them
-   unless it is really necessary.  */
-#define __have_pipe2 __have_sock_cloexec
+extern int __have_pipe2;
 
 extern int __getlogin_r_loginuid (char *name, size_t namesize)
      attribute_hidden;

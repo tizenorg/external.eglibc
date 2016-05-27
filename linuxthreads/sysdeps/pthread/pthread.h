@@ -31,26 +31,26 @@ __BEGIN_DECLS
 /* Initializers.  */
 
 #define PTHREAD_MUTEX_INITIALIZER \
-  {0, 0, 0, PTHREAD_MUTEX_TIMED_NP, __LOCK_INITIALIZER}
+  {0, 0, 0, PTHREAD_MUTEX_TIMED_NP, __LOCK_ALT_INITIALIZER}
 #ifdef __USE_GNU
 # define PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP \
-  {0, 0, 0, PTHREAD_MUTEX_RECURSIVE_NP, __LOCK_INITIALIZER}
+  {0, 0, 0, PTHREAD_MUTEX_RECURSIVE_NP, __LOCK_ALT_INITIALIZER}
 # define PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP \
-  {0, 0, 0, PTHREAD_MUTEX_ERRORCHECK_NP, __LOCK_INITIALIZER}
+  {0, 0, 0, PTHREAD_MUTEX_ERRORCHECK_NP, __LOCK_ALT_INITIALIZER}
 # define PTHREAD_ADAPTIVE_MUTEX_INITIALIZER_NP \
-  {0, 0, 0, PTHREAD_MUTEX_ADAPTIVE_NP, __LOCK_INITIALIZER}
+  {0, 0, 0, PTHREAD_MUTEX_ADAPTIVE_NP, __LOCK_ALT_INITIALIZER}
 #endif
 
-#define PTHREAD_COND_INITIALIZER {__LOCK_INITIALIZER, 0, "", 0}
+#define PTHREAD_COND_INITIALIZER {__LOCK_ALT_INITIALIZER, 0, CLOCK_REALTIME, "", 0}
 
 #if defined __USE_UNIX98 || defined __USE_XOPEN2K
 # define PTHREAD_RWLOCK_INITIALIZER \
-  { __LOCK_INITIALIZER, 0, NULL, NULL, NULL,				      \
+  { __LOCK_ALT_INITIALIZER, 0, NULL, NULL, NULL,			      \
     PTHREAD_RWLOCK_DEFAULT_NP, PTHREAD_PROCESS_PRIVATE }
 #endif
 #ifdef __USE_GNU
 # define PTHREAD_RWLOCK_WRITER_NONRECURSIVE_INITIALIZER_NP \
-  { __LOCK_INITIALIZER, 0, NULL, NULL, NULL,				      \
+  { __LOCK_ALT_INITIALIZER, 0, NULL, NULL, NULL,			      \
     PTHREAD_RWLOCK_PREFER_WRITER_NONRECURSIVE_NP, PTHREAD_PROCESS_PRIVATE }
 #endif
 
@@ -86,7 +86,7 @@ enum
   PTHREAD_MUTEX_RECURSIVE_NP,
   PTHREAD_MUTEX_ERRORCHECK_NP,
   PTHREAD_MUTEX_ADAPTIVE_NP
-#ifdef __USE_UNIX98
+#if defined __USE_UNIX98 || defined __USE_XOPEN2K8
   ,
   PTHREAD_MUTEX_NORMAL = PTHREAD_MUTEX_TIMED_NP,
   PTHREAD_MUTEX_RECURSIVE = PTHREAD_MUTEX_RECURSIVE_NP,
@@ -241,7 +241,6 @@ extern int pthread_attr_setscope (pthread_attr_t *__attr, int __scope)
 extern int pthread_attr_getscope (__const pthread_attr_t *__restrict __attr,
 				  int *__restrict __scope) __THROW;
 
-#ifdef __USE_UNIX98
 /* Set the size of the guard area at the bottom of the thread.  */
 extern int pthread_attr_setguardsize (pthread_attr_t *__attr,
 				      size_t __guardsize) __THROW;
@@ -250,7 +249,6 @@ extern int pthread_attr_setguardsize (pthread_attr_t *__attr,
 extern int pthread_attr_getguardsize (__const pthread_attr_t *__restrict
 				      __attr, size_t *__restrict __guardsize)
      __THROW;
-#endif
 
 /* Set the starting address of the stack of the thread to be created.
    Depending on whether the stack grows up or down the value must either
@@ -371,7 +369,7 @@ extern int pthread_mutexattr_getpshared (__const pthread_mutexattr_t *
 extern int pthread_mutexattr_setpshared (pthread_mutexattr_t *__attr,
 					 int __pshared) __THROW;
 
-#ifdef __USE_UNIX98
+#if defined __USE_UNIX98 || defined __USE_XOPEN2K8
 /* Set the mutex kind attribute in *ATTR to KIND (either PTHREAD_MUTEX_NORMAL,
    PTHREAD_MUTEX_RECURSIVE, PTHREAD_MUTEX_ERRORCHECK, or
    PTHREAD_MUTEX_DEFAULT).  */

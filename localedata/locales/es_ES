@@ -50,6 +50,18 @@ END LC_IDENTIFICATION
 LC_COLLATE
 % Copy the template from ISO/IEC 14651
 copy "iso14651_t1"
+
+collating-symbol  <ntilde>
+
+reorder-after <n>
+<ntilde>
+
+reorder-after <U006E>
+<U00F1> <ntilde>;<TIL>;<MIN>;IGNORE
+reorder-after <U004E>
+<U00D1> <ntilde>;<TIL>;<CAP>;IGNORE
+
+reorder-end
 END LC_COLLATE
 
 LC_CTYPE
@@ -85,8 +97,8 @@ END LC_MONETARY
 
 LC_NUMERIC
 decimal_point        "<U002C>"
-thousands_sep        ""
-grouping             0;0
+thousands_sep        "<U002E>"
+grouping             3;3
 END LC_NUMERIC
 
 LC_TIME

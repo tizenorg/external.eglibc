@@ -33,7 +33,7 @@ long int
 __sysconf (int name)
 {
   if (name == _SC_CPUTIME || name == _SC_THREAD_CPUTIME)
-    return has_cpuclock () ? 200112L : -1;
+    return has_cpuclock () ? _POSIX_VERSION : -1;
 
   /* Everything else is handled by the more general code.  */
   return linux_sysconf (name);

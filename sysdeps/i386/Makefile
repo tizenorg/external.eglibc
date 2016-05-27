@@ -9,6 +9,11 @@ ifeq ($(subdir),csu)
 # On i686 we must avoid generating the trampoline functions generated
 # to get the GOT pointer.
 CFLAGS-initfini.s += -march=i386 -mtune=i386 -fno-asynchronous-unwind-tables -fno-unwind-tables
+ifeq (yes,$(build-shared))
+# Compatibility
+sysdep_routines += libgcc-compat
+shared-only-routines += libgcc-compat
+endif
 endif
 
 ifeq ($(subdir),nptl)

@@ -309,7 +309,7 @@ __pthread_initialize_minimal(void)
   pthread_descr self;
 
   /* First of all init __pthread_handles[0] and [1] if needed.  */
-# if __LT_SPINLOCK_INIT != 0
+# ifdef __LT_INITIALIZER_NOT_ZERO
   __pthread_handles[0].h_lock = __LOCK_INITIALIZER;
   __pthread_handles[1].h_lock = __LOCK_INITIALIZER;
 # endif
@@ -379,7 +379,7 @@ cannot allocate TLS data structures for initial thread\n";
 # endif
   /* self->p_start_args need not be initialized, it's all zero.  */
   self->p_userstack = 1;
-# if __LT_SPINLOCK_INIT != 0
+# ifdef __LT_INITIALIZER_NOT_ZERO 
   self->p_resume_count = (struct pthread_atomic) __ATOMIC_INITIALIZER;
 # endif
   self->p_alloca_cutoff = __MAX_ALLOCA_CUTOFF;
@@ -393,7 +393,7 @@ cannot allocate TLS data structures for initial thread\n";
 #else  /* USE_TLS */
 
   /* First of all init __pthread_handles[0] and [1].  */
-# if __LT_SPINLOCK_INIT != 0
+# ifdef __LT_INITIALIZER_NOT_ZERO
   __pthread_handles[0].h_lock = __LOCK_INITIALIZER;
   __pthread_handles[1].h_lock = __LOCK_INITIALIZER;
 # endif
@@ -429,6 +429,8 @@ __pthread_init_max_stacksize(void)
 #ifdef FLOATING_STACKS
   if (limit.rlim_cur == RLIM_INFINITY)
     limit.rlim_cur = ARCH_STACK_MAX_SIZE;
+  if (limit.rlim_cur > 4 * ARCH_STACK_MAX_SIZE)
+    limit.rlim_cur = 4 * ARCH_STACK_MAX_SIZE;
 # ifdef NEED_SEPARATE_REGISTER_STACK
   max_stack = limit.rlim_cur / 2;
 # else
@@ -662,6 +664,29 @@ int __pthread_initialize_manager(void)
     free(__pthread_manager_thread_bos);
     return -1;
   }
+  /* Make sure the file descriptors of the pipe doesn't collide
+     with stdin, stdout or stderr if they have been closed. */
+  if (manager_pipe[0] < 3) {
+    int new_fd;
+    new_fd = fcntl(manager_pipe[0], F_DUPFD, 3);
+    close(manager_pipe[0]);
+    if (new_fd == -1) {
+      free(__pthread_manager_thread_bos);
+      return -1;
+    }
+    manager_pipe[0] = new_fd;
+  }
+  if (manager_pipe[1] < 3) {
+    int new_fd;
+    new_fd = fcntl(manager_pipe[1], F_DUPFD, 3);
+    close(manager_pipe[1]);
+    if (new_fd == -1) {
+      close(manager_pipe[0]);
+      free(__pthread_manager_thread_bos);
+      return -1;
+    }
+    manager_pipe[1] = new_fd;
+  }
 
 #ifdef USE_TLS
   /* Allocate memory for the thread descriptor and the dtv.  */
@@ -696,8 +721,8 @@ int __pthread_initialize_manager(void)
 # endif
   mgr->p_start_args = (struct pthread_start_args) PTHREAD_START_ARGS_INITIALIZER(__pthread_manager);
   mgr->p_nr = 1;
-# if __LT_SPINLOCK_INIT != 0
-  self->p_resume_count = (struct pthread_atomic) __ATOMIC_INITIALIZER;
+# ifdef __LT_INITIALIZER_NOT_ZERO
+  mgr->p_resume_count = (struct pthread_atomic) __ATOMIC_INITIALIZER;
 # endif
   mgr->p_alloca_cutoff = PTHREAD_STACK_MIN / 4;
 #else
@@ -1199,6 +1224,15 @@ void __pthread_kill_other_threads_np(void)
   /* Reset the signal handlers behaviour for the signals the
      implementation uses since this would be passed to the new
      process.  */
+#if 1
+  /* 
+  do not do it as it is wrong.
+  the __pthread_kill_other_threads_np() is used just before exec,
+  the successfull one resets signals with handler into DFL behaviour anyway (in kernel),
+  the failed one needs the signal handler as before to allow creating of new threads
+  as already noted above
+  */
+#else     
   sigemptyset(&sa.sa_mask);
   sa.sa_flags = 0;
   sa.sa_handler = SIG_DFL;
@@ -1206,6 +1240,7 @@ void __pthread_kill_other_threads_np(void)
   __libc_sigaction(__pthread_sig_cancel, &sa, NULL);
   if (__pthread_sig_debug > 0)
     __libc_sigaction(__pthread_sig_debug, &sa, NULL);
+#endif    
 }
 weak_alias (__pthread_kill_other_threads_np, pthread_kill_other_threads_np)
 
@@ -1287,6 +1322,7 @@ __pthread_timedsuspend_old(pthread_descr self, const struct timespec *abstime)
 	struct timespec reltime;
 
 	/* Compute a time offset relative to now.  */
+#error "gettimeofday() ignores pthread_condattr_setclock() setting"
 	__gettimeofday (&now, NULL);
 	reltime.tv_nsec = abstime->tv_nsec - now.tv_usec * 1000;
 	reltime.tv_sec = abstime->tv_sec - now.tv_sec;
@@ -1357,6 +1393,12 @@ void __pthread_restart_new(pthread_descr th)
 int
 __pthread_timedsuspend_new(pthread_descr self, const struct timespec *abstime)
 {
+  return __pthread_timedsuspend_new_clk (self, abstime, CLOCK_REALTIME);
+}
+
+int
+__pthread_timedsuspend_new_clk(pthread_descr self, const struct timespec *abstime, clockid_t clock_id)
+{
   sigset_t unblock, initial_mask;
   int was_signalled = 0;
   sigjmp_buf jmpbuf;
@@ -1370,12 +1412,11 @@ __pthread_timedsuspend_new(pthread_descr self, const struct timespec *abstime)
     sigprocmask(SIG_UNBLOCK, &unblock, &initial_mask);
 
     while (1) {
-      struct timeval now;
-      struct timespec reltime;
+      struct timespec now, reltime;
 
       /* Compute a time offset relative to now.  */
-      __gettimeofday (&now, NULL);
-      reltime.tv_nsec = abstime->tv_nsec - now.tv_usec * 1000;
+      INLINE_SYSCALL (clock_gettime, 2, clock_id, &now);
+      reltime.tv_nsec = abstime->tv_nsec - now.tv_nsec;
       reltime.tv_sec = abstime->tv_sec - now.tv_sec;
       if (reltime.tv_nsec < 0) {
 	reltime.tv_nsec += 1000000000;

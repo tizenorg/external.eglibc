@@ -404,10 +404,21 @@ memalign_check(alignment, bytes, caller)
   if (alignment <= MALLOC_ALIGNMENT) return malloc_check(bytes, NULL);
   if (alignment <  MINSIZE) alignment = MINSIZE;
 
-  if (bytes+1 == 0) {
-    MALLOC_FAILURE_ACTION;
-    return NULL;
-  }
+  /* If the alignment is greater than SIZE_MAX / 2 + 1 it cannot be a
+     power of 2 and will cause overflow in the check below.  */
+  if (alignment > SIZE_MAX / 2 + 1)
+    {
+      __set_errno (EINVAL);
+      return 0;
+    }
+
+  /* Check for overflow.  */
+  if (bytes > SIZE_MAX - alignment - MINSIZE)
+    {
+      MALLOC_FAILURE_ACTION;
+      return 0;
+    }
+
   checked_request2size(bytes+1, nb);
   (void)mutex_lock(&main_arena.mutex);
   mem = (top_check() >= 0) ? _int_memalign(&main_arena, alignment, bytes+1) :

@@ -22,12 +22,14 @@
 #define __need_schedparam
 #include <bits/sched.h>
 
+typedef int __atomic_lock_t;
+
 /* Fast locks (not abstract because mutexes and conditions aren't abstract). */
 struct _pthread_fastlock
 {
-  long int __status;   /* "Free" or "taken" or head of waiting list */
-  int __spinlock;      /* Used by compare_and_swap emulation. Also,
-			  adaptive SMP lock stores spin count here. */
+  long int __status;		/* "Free" or "taken" or head of waiting list */
+  __atomic_lock_t __spinlock;	/* Used by compare_and_swap emulation. Also,
+				   adaptive SMP lock stores spin count here. */
 };
 
 #ifndef _PTHREAD_DESCR_DEFINED
@@ -64,16 +66,21 @@ typedef struct
 {
   struct _pthread_fastlock __c_lock; /* Protect against concurrent access */
   _pthread_descr __c_waiting;        /* Threads waiting on this condition */
-  char __padding[48 - sizeof (struct _pthread_fastlock)
+  /* Since we only support two clock_id types in pthread_condattr_setclock(),
+   * this can be shrinked into a single bit if we need more space.  */
+  int __clock_id;
+  char __padding[48 - sizeof (struct _pthread_fastlock) - sizeof (int)
 		 - sizeof (_pthread_descr) - sizeof (__pthread_cond_align_t)];
   __pthread_cond_align_t __align;
 } pthread_cond_t;
 
 
 /* Attribute for conditionally variables.  */
-typedef struct
+typedef struct pthread_condattr
 {
-  int __dummy;
+  /* Since we only support two clock_id types in pthread_condattr_setclock(),
+   * this can be shrinked into a single bit if we need more space.  */
+  int __clock_id;
 } pthread_condattr_t;
 
 /* Keys for thread-specific data */

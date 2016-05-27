@@ -4046,6 +4046,11 @@ if test "$machine" = rs6000; then
   machine="powerpc"
 fi
 
+# Force v9
+if test "$machine" = sparc; then
+   machine="sparcv9"
+fi
+
 # Braindead PowerPC box with absolutely no FPU.
 case "$machine-$host_os" in
   powerpc*-*soft)

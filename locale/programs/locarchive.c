@@ -134,7 +134,7 @@ create_archive (const char *archivefname, struct locarhandle *ah)
   size_t reserved = RESERVE_MMAP_SIZE;
   int xflags = 0;
   if (total < reserved
-      && ((p = mmap64 (NULL, reserved, PROT_NONE, MAP_PRIVATE | MAP_ANON,
+      && ((p = mmap64 (NULL, reserved, PROT_NONE, MAP_SHARED | MAP_ANON,
 		       -1, 0)) != MAP_FAILED))
     xflags = MAP_FIXED;
   else
@@ -397,7 +397,7 @@ enlarge_archive (struct locarhandle *ah, const struct locarhead *head)
   size_t reserved = RESERVE_MMAP_SIZE;
   int xflags = 0;
   if (total < reserved
-      && ((p = mmap64 (NULL, reserved, PROT_NONE, MAP_PRIVATE | MAP_ANON,
+      && ((p = mmap64 (NULL, reserved, PROT_NONE, MAP_SHARED | MAP_ANON,
 		       -1, 0)) != MAP_FAILED))
     xflags = MAP_FIXED;
   else
@@ -416,7 +416,16 @@ enlarge_archive (struct locarhandle *ah, const struct locarhead *head)
     }
 
   /* Lock the new file.  */
+#ifdef __GNU__
+  struct flock fl;
+  fl.l_whence = SEEK_SET;
+  fl.l_start = 0;
+  fl.l_len = 0;
+  fl.l_type = F_WRLCK;
+  if (fcntl(fd, F_SETLKW, &fl) != 0)
+#else
   if (lockf64 (fd, F_LOCK, total) != 0)
+#endif
     {
       int errval = errno;
       unlink (fname);
@@ -564,7 +573,16 @@ open_archive (struct locarhandle *ah, bool readonly)
 	error (EXIT_FAILURE, errno, _("cannot stat locale archive \"%s\""),
 	       archivefname);
 
+#ifdef __GNU__
+      struct flock fl;
+      fl.l_whence = SEEK_SET;
+      fl.l_start = 0;
+      fl.l_len = 0;
+      fl.l_type = F_WRLCK;
+      if (!readonly && fcntl(fd, F_SETLKW, &fl) == -1)
+#else
       if (!readonly && lockf64 (fd, F_LOCK, sizeof (struct locarhead)) == -1)
+#endif
 	{
 	  close (fd);
 
@@ -615,7 +633,7 @@ open_archive (struct locarhandle *ah, bool readonly)
   int xflags = 0;
   void *p;
   if (st.st_size < reserved
-      && ((p = mmap64 (NULL, reserved, PROT_NONE, MAP_PRIVATE | MAP_ANON,
+      && ((p = mmap64 (NULL, reserved, PROT_NONE, MAP_SHARED | MAP_ANON,
 		       -1, 0)) != MAP_FAILED))
     xflags = MAP_FIXED;
   else

@@ -40,6 +40,7 @@
 #include <sys/socket.h>
 #include <errno.h>
 #include <libintl.h>
+#include <time.h>
 
 #ifdef IP_PKTINFO
 #include <sys/uio.h>
@@ -272,8 +273,16 @@ again:
 		       (int) su->su_iosz, 0,
 		       (struct sockaddr *) &(xprt->xp_raddr), &len);
   xprt->xp_addrlen = len;
-  if (rlen == -1 && errno == EINTR)
-    goto again;
+  if (rlen == -1)
+    {
+      if (errno == EINTR)
+        goto again;
+      if (errno == EMFILE)
+        {
+          struct timespec ts = { .tv_sec = 0, .tv_nsec = 50000000 };
+          __nanosleep(&ts , NULL);
+        }
+    }
   if (rlen < 16)		/* < 4 32-bit ints? */
     return FALSE;
   xdrs->x_op = XDR_DECODE;

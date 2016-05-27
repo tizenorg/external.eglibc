@@ -370,12 +370,12 @@
     DECLARGS_##nr(args)							      \
     register long _ret asm("2");					      \
     asm volatile (							      \
-    "lgr 11,14\n\t"							      \
+    "lgr 10,14\n\t"                                                          \
     "basr 14,%1\n\t"							      \
-    "lgr 14,11\n\t"							      \
+    "lgr 14,10\n\t"                                                          \
     : "=d" (_ret)							      \
     : "a" (fn) ASMFMT_##nr						      \
-    : "cc", "memory", "0", "1", "11" CLOBBER_##nr);			      \
+    : "cc", "memory", "0", "1", "10" CLOBBER_##nr);                          \
     _ret; })
 
 /* Pointer mangling support.  */

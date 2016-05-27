@@ -23,6 +23,7 @@
 #include <stdint.h>
 #include <sys/types.h>
 #include <hp-timing.h>
+#include <lowlevellock.h>
 #include <tls.h>
 
 /* Fast thread-specific data internal to libc.  */
@@ -71,7 +72,7 @@ typedef struct _pthread_extricate_struct {
 /* Atomic counter made possible by compare_and_swap */
 struct pthread_atomic {
   long p_count;
-  int p_spinlock;
+  __atomic_lock_t p_spinlock;
 };
 
 
@@ -123,12 +124,23 @@ struct _pthread_descr_struct
       uintptr_t sysinfo;
       uintptr_t stack_guard;
       uintptr_t pointer_guard;
+# ifdef __FreeBSD_kernel__
+      long gscope_flag;
+# else
+      int gscope_flag;
+# endif
     } data;
     void *__padding[16];
   } p_header;
 # define p_multiple_threads p_header.data.multiple_threads
+# define p_gscope_flag p_header.data.gscope_flag
 #elif TLS_MULTIPLE_THREADS_IN_TCB
   int p_multiple_threads;
+# ifdef __FreeBSD_kernel__
+  long p_gscope_flag;
+# else
+  int p_gscope_flag;
+# endif
 #endif
 
   pthread_descr p_nextlive, p_prevlive;
@@ -248,8 +260,8 @@ extern int __pthread_nonstandard_stacks;
 
 extern pthread_descr __pthread_find_self (void) __attribute__ ((pure));
 
-static inline pthread_descr thread_self (void) __attribute__ ((pure));
-static inline pthread_descr thread_self (void)
+extern inline pthread_descr thread_self (void) __attribute__ ((pure));
+extern inline pthread_descr thread_self (void)
 {
 #ifdef THREAD_SELF
   return THREAD_SELF;
